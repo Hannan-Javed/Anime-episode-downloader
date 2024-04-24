@@ -25,12 +25,13 @@ def download_episode(i):
     if ".crdownload" in "".join(files) == False:
         # Episode didnt start downloading
         return False
-    while(".crdownload" in "".join(files)) and totaltime<=60:
+    while(".crdownload" in "".join(files)) and totaltime<=150:
         print("Downloading episode "+str(i)+".......")
         time.sleep(5)
         totaltime+=5
         files = os.listdir(download_directory)
-    if totaltime > 60:
+    # wait two and a half minutes before returning false
+    if totaltime > 150:
         return False
     return True
 
