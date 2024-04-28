@@ -31,7 +31,6 @@ def clear_undownloaded_files():
 
 def download_episode(i):
     
-    # keep open until downloaded
     totaltime = 0
     files = os.listdir(download_directory)
     if ".crdownload" in "".join(files) == False:
@@ -128,6 +127,8 @@ def download_episodes(url, start_episode, end_episode):
         
         # go to next page
         i+=1
+        if i >= end_episode+1:
+            break
         response = requests.get(url+str(i))
         soup = BeautifulSoup(response.text, 'html.parser')
         videosource_link = soup.findAll('iframe')
@@ -139,10 +140,11 @@ def download_episodes(url, start_episode, end_episode):
 
 if __name__ == "__main__":
 
-    url = re.findall("[A-Za-z-:/?.+&]*",input('''Go to this website and paste the link of any episode of the anime you would like to download:
+    url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
 https://goone.pro
-'''))[0]
-    print(url)
+''')
+    ep = len(re.findall("[0-9]+",url)[-1])
+    url = url[:-ep]
     episodes = input('''Enter the number of episodes you want to download
 m - From episode 1 until episode m
 m,n - From episode m to n (m < n)
@@ -150,7 +152,7 @@ m,-1 - From episode m to final
 All - From episode 1 until final episode
 (Enter 1 if its a movie)
 ''')
-    
+
     if episodes.lower()[0] == 'a':
         download_episodes(url, 1, -1)
     elif len(episodes.split(','))>1:

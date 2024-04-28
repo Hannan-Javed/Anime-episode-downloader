@@ -18,5 +18,6 @@ m,-1 - From episode m to final
 All - From episode 1 until final episode
 
 After inputting and clicking enter, the downloading will automatically start and it will try to download from the highest quality. If theres an error in the link, it will try the lower quality links if they work. Episode will not be downloaded if it takes longer than **Two and a half minutes** to download or **No links work**.
+If you want to skip downloading an episode, just close the opened chrome tab and click "exit" when prompted - this will delete the undownloaded file.
 ## Note
 Running this will delete any undownloaded files in the downloads folder
