@@ -158,4 +158,4 @@ All - From episode 1 until final episode
     elif len(episodes.split(','))>1:
         download_episodes(url, int(episodes.split(',')[0]), int(episodes.split(',')[1]))
     else:
-        download_episodes(url, 1, episodes)
+        download_episodes(url, 1, int(episodes))
