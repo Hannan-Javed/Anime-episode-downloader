@@ -147,7 +147,7 @@ https://goone.pro
     url = url[:-ep]
     episodes = input('''Enter the number of episodes you want to download
 m - From episode 1 until episode m
-m,n - From episode m to n (m < n)
+m,n - From episode m to n (m <= n)
 m,-1 - From episode m to final
 All - From episode 1 until final episode
 (Enter 1 if its a movie)
