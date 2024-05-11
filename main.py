@@ -82,20 +82,19 @@ def download_episodes(url, start_episode, end_episode):
         # clean directory by deleting undownloaded files
         clear_undownloaded_files()
 
+        # remove external links
+        while ")" not in downloadlinks[-1][0]:
+            downloadlinks.pop()
+            
         # click on the link in reverse order (e.g. 1080p is the last link)
         downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlinks[-1][1]+'"]')
         driver.execute_script("arguments[0].click();", downloadlink)
         time.sleep(2)
-
         successful = download_episode(i)
         # if unsuccessful, try other links
         while not successful and len(downloadlinks)!=0:
             # pop the last link as it was unsuccessful
             downloadlinks.pop()
-            # check if its one of 1080p, 720p, 480p or 360p link
-            while ")" not in downloadlinks[-1][0]:
-                downloadlinks.pop()
-                continue
             # if no link is valid exit loop
             if len(downloadlinks)==0:
                 break
