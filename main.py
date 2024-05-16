@@ -33,15 +33,16 @@ def download_episode(i):
     
     totaltime = 0
     files = os.listdir(download_directory)
-    if ".crdownload" in "".join(files) == False:
-        # Episode didnt start downloading
+    if ".crdownload" not in "".join(files):
+        # Episode did not start downloading
         return False
-    while (".crdownload" in "".join(files)) and totaltime<150:
+    while (".crdownload" in "".join(files)) and totaltime<160:
+        # print every five seconds
+        if totaltime%15==0:
+            print("Downloading episode "+str(i)+".......")
         time.sleep(1)
         totaltime+=1
-        # print every five seconds
-        if totaltime%5==0:
-            print("Downloading episode "+str(i)+".......")
+        # update file list to see if it is downloaded
         files = os.listdir(download_directory)
     # wait two and a half minutes before returning false
     return totaltime<150
@@ -57,6 +58,7 @@ def download_episodes(url, start_episode, end_episode):
     if not videosource_link:
         print("Cannot find download link for episode "+str(i))
         i+=1
+    
     # title is fixed so find outside loop
     title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
 
@@ -85,45 +87,39 @@ def download_episodes(url, start_episode, end_episode):
         # remove external links
         while ")" not in downloadlinks[-1][0]:
             downloadlinks.pop()
-            
+
         # click on the link in reverse order (e.g. 1080p is the last link)
-        downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlinks[-1][1]+'"]')
-        driver.execute_script("arguments[0].click();", downloadlink)
-        time.sleep(2)
-        successful = download_episode(i)
-        # if unsuccessful, try other links
-        while not successful and len(downloadlinks)!=0:
-            # pop the last link as it was unsuccessful
-            downloadlinks.pop()
-            # if no link is valid exit loop
-            if len(downloadlinks)==0:
-                break
-            # start driver again
-            driver.quit()
-            # start simulating chrome
-            driver = webdriver.Chrome()
-            driver.get(downloadpagelink)
+        while True:
 
-            # wait for page to load
-            time.sleep(3)
-
-            # clean directory by deleting undownloaded files
-            clear_undownloaded_files()
-            
             # click on the link in reverse order (e.g. 1080p is the last link)
             downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlinks[-1][1]+'"]')
             driver.execute_script("arguments[0].click();", downloadlink)
             time.sleep(2)
 
             successful = download_episode(i)
-        
+
+            # pop this used link
+            downloadlinks.pop()
+
+            if successful or len(downloadlinks)==0:
+                break
+            else:
+                # relaunch for next page if this one was unsuccessful and still links left
+                driver.quit()
+                print("Restarting download with another link.....")
+                driver = webdriver.Chrome()
+                driver.get(downloadpagelink)
+
+                # wait for page to load
+                time.sleep(3)
+
         if successful:
             print("Successfully downloaded episode "+str(i)+"!")
         else:
             # cannot download from any link
             print("Error! Cannot downloaded episode "+str(i))
+    
         driver.quit()
-        
         # go to next page
         i+=1
         if i >= end_episode+1:
