@@ -23,7 +23,6 @@ download_directory = get_download_directory()
 def clear_undownloaded_files():
     # get all the files
     file_list = os.listdir(download_directory)
-
     # Iterate over the files and delete .crdownload files
     for file_name in file_list:
         if file_name.endswith(".crdownload"):
@@ -34,45 +33,41 @@ def download_episode(i):
     
     totaltime = 0
     files = os.listdir(download_directory)
-
     if ".crdownload" not in "".join(files):
         # Episode did not start downloading
         return False
-    while (".crdownload" in "".join(files)) and totaltime<150:
+    while (".crdownload" in "".join(files)) and totaltime<160:
         # print every five seconds
         if totaltime%15==0:
             print("Downloading episode "+str(i)+".......")
-
         time.sleep(1)
         totaltime+=1
-
         # update file list to see if it is downloaded
         files = os.listdir(download_directory)
-
     # wait two and a half minutes before returning false
     return totaltime<150
 
 def download_episodes(url, start_episode, end_episode):
 
-    current_episode = start_episode
+    i = start_episode
     if end_episode == -1:
         end_episode = 10000
-    response = requests.get(url+str(current_episode))
+    response = requests.get(url+str(i))
     soup = BeautifulSoup(response.text, 'html.parser')
     videosource_link = soup.findAll('iframe')
-
     if not videosource_link:
-        print("Cannot find download link for episode "+str(current_episode))
-        current_episode+=1
+        print("Cannot find download link for episode "+str(i))
+        i+=1
     
     # title is fixed so find outside loop
     title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
 
-    while current_episode < end_episode+1:
+    while i < end_episode+1:
         
         # find episode download page id
         id = re.findall("id=[0-9A-Za-z]*",str(videosource_link[0]))[0]
-        downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=SUB"
+        downloadpagelink = "https://embtaku.pro/download?"+id+title+str(i)+"&typesub=SUB"
+        downloadlinks = []
 
         # start simulating chrome
         driver = webdriver.Chrome()
@@ -80,24 +75,33 @@ def download_episodes(url, start_episode, end_episode):
 
         # wait for page to load
         time.sleep(3)
+        
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        # find links for all 1inks - 1080p, 720p, 480p and 360p
+        for j in range(4):
+            downloadlinks.append([soup.find_all('a')[j+1].text] + [re.findall("https[A-Za-z0-9-=:/.?]*",str(soup.find_all('a')[j+1]))[0]])
+        
+        # clean directory by deleting undownloaded files
+        clear_undownloaded_files()
 
-        # main loop to iterate through all links (1080p, 720p, 480p, 360p) starting from highest if any link fails
-        j=3
+        # remove external links
+        while ")" not in downloadlinks[-1][0]:
+            downloadlinks.pop()
+
+        # click on the link in reverse order (e.g. 1080p is the last link)
         while True:
 
-            # clear undownloaded files before starting download
-            clear_undownloaded_files()
-            # find download link
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            downloadlink = re.findall("https[A-Za-z0-9-=:/.?]*",str(soup.find_all('a')[j+1]))[0]
-            downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlink+'"]')
+            # click on the link in reverse order (e.g. 1080p is the last link)
+            downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlinks[-1][1]+'"]')
             driver.execute_script("arguments[0].click();", downloadlink)
-            # wait for download to start
             time.sleep(2)
-            successful = download_episode(current_episode)
-            j-=1
 
-            if successful or j==-1:
+            successful = download_episode(i)
+
+            # pop this used link
+            downloadlinks.pop()
+
+            if successful or len(downloadlinks)==0:
                 break
             else:
                 # relaunch for next page if this one was unsuccessful and still links left
@@ -105,26 +109,27 @@ def download_episodes(url, start_episode, end_episode):
                 print("Restarting download with another link.....")
                 driver = webdriver.Chrome()
                 driver.get(downloadpagelink)
+
                 # wait for page to load
                 time.sleep(3)
+
         if successful:
-            print("Successfully downloaded episode "+str(current_episode)+"!")
+            print("Successfully downloaded episode "+str(i)+"!")
         else:
             # cannot download from any link
-            print("Error! Cannot downloaded episode "+str(current_episode))
+            print("Error! Cannot downloaded episode "+str(i))
     
         driver.quit()
         # go to next page
-        current_episode+=1
-        if current_episode >= end_episode+1:
+        i+=1
+        if i >= end_episode+1:
             break
-        response = requests.get(url+str(current_episode))
+        response = requests.get(url+str(i))
         soup = BeautifulSoup(response.text, 'html.parser')
         videosource_link = soup.findAll('iframe')
         if not videosource_link:
-            print("Cannot find download link for episode "+str(current_episode))
+            print("Cannot find download link for episode "+str(i))
             continue
-
     print("All episodes downloaded!")
             
 
