@@ -64,14 +64,19 @@ def download_episodes(url, start_episode, end_episode):
     if not videosource_link:
         print("Cannot find download link for episode "+str(current_episode))
         current_episode+=1
-    
-    # title is fixed so find outside loop
-    title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
-
+    try:
+        # title is fixed so find outside loop
+        title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
+    except IndexError:
+        print("No such episode exists!")
     while current_episode < end_episode+1:
         
         # find episode download page id
-        id = re.findall("id=[0-9A-Za-z]*",str(videosource_link[0]))[0]
+        try:
+            id = re.findall("id=[0-9A-Za-z]*",str(videosource_link[0]))[0]
+        except IndexError:
+            print("No more episodes to download!")
+            break
         downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=SUB"
 
         # start simulating chrome
