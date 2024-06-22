@@ -12,7 +12,7 @@ Make sure that you are not downloading any other file in the download folder
 Run `main.py` and input two things:
 1. url: Go to the website https://goone.pro and search for the anime you want to download. Go to the **first episode** of that anime and copy the URL, and paste it in the terminal.
 2. Number of episodes: Input how many episodes do you want to download. The format is:
-m - From episode 1 until episode m
+m - Episode m
 m,n - From episode m to n (m < n)
 m,-1 - From episode m to final
 All - From episode 1 until final episode

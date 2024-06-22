@@ -133,19 +133,20 @@ if __name__ == "__main__":
     url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
 https://goone.pro
 ''')
-    ep = len(re.findall("[0-9]+",url)[-1])
-    url = url[:-ep]
     episodes = input('''Enter the number of episodes you want to download
-m - From episode 1 until episode m
+m - Episode m
 m,n - From episode m to n (m <= n)
 m,-1 - From episode m to final
 All - From episode 1 until final episode
 (Enter 1 if its a movie)
 ''')
+    ep = len(re.findall("[0-9]+",url)[-1])
+    url = url[:-ep]
+    
 
     if episodes.lower()[0] == 'a':
         download_episodes(url, 1, -1)
     elif len(episodes.split(','))>1:
         download_episodes(url, int(episodes.split(',')[0]), int(episodes.split(',')[1]))
     else:
-        download_episodes(url, 1, int(episodes))
+        download_episodes(url, int(episodes), int(episodes))
