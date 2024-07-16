@@ -69,6 +69,9 @@ def download_episodes(url, start_episode, end_episode):
         title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
     except IndexError:
         print("No such episode exists!")
+
+    driver = webdriver.Chrome()
+    
     while current_episode < end_episode+1:
         
         # find episode download page id
@@ -80,7 +83,7 @@ def download_episodes(url, start_episode, end_episode):
         downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=SUB"
 
         # start simulating chrome
-        driver = webdriver.Chrome()
+        
         driver.get(downloadpagelink)
 
         # wait for page to load
@@ -106,9 +109,7 @@ def download_episodes(url, start_episode, end_episode):
                 break
             else:
                 # relaunch for next page if this one was unsuccessful and still links left
-                driver.quit()
                 print("Restarting download with another link.....")
-                driver = webdriver.Chrome()
                 driver.get(downloadpagelink)
                 # wait for page to load
                 time.sleep(3)
@@ -118,7 +119,6 @@ def download_episodes(url, start_episode, end_episode):
             # cannot download from any link
             print("Error! Cannot downloaded episode "+str(current_episode))
     
-        driver.quit()
         # go to next page
         current_episode+=1
         if current_episode >= end_episode+1:
@@ -129,7 +129,7 @@ def download_episodes(url, start_episode, end_episode):
         if not videosource_link:
             print("Cannot find download link for episode "+str(current_episode))
             continue
-
+    driver.quit()
     print("All episodes downloaded!")
             
 
