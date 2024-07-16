@@ -109,6 +109,9 @@ def download_episodes(url, start_episode, end_episode):
                 break
             else:
                 # relaunch for next page if this one was unsuccessful and still links left
+                if ".crdownload" in "".join(os.listdir(download_directory)):
+                    driver.quit()
+                    driver = webdriver.Chrome()
                 print("Restarting download with another link.....")
                 driver.get(downloadpagelink)
                 # wait for page to load
