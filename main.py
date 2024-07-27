@@ -80,7 +80,7 @@ def download_episodes(url, episode_list):
             soup = BeautifulSoup(response.text, 'html.parser')
             videosource_link = soup.findAll('iframe')
             if not videosource_link:
-                print("Cannot find download link for episode "+str(episode_list[episode_list.index(current_episode) + 1]))
+                print("Cannot find download link for episode "+str(current_episode))
                 continue
         
         # find episode download page id
@@ -166,9 +166,9 @@ m,n,o..... - episode m, n, o, ....
             valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',') 
 
         if episodes.lower()[0] == 'a':
-            download_episodes(url, [1, 10000])
+            download_episodes(url, list(range(1, 10000)))
         elif len(episodes.split(','))==2:
-            episodes_list = list(range(int(episodes.split(',')[0]), int(episodes.split(',')[1])+1))
+            episodes_list = list(range(int(episodes.split(',')[0]), (int(episodes.split(',')[1])+1) if int(episodes.split(',')[1])!=-1 else 10000))
             download_episodes(url, episodes_list)
         elif len(episodes.split(','))>2:
             download_episodes(url, list(map(int, episodes.split(','))))
