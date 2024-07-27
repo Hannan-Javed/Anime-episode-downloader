@@ -138,23 +138,28 @@ def download_episodes(url, start_episode, end_episode):
 
 if __name__ == "__main__":
 
-    url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
-https://goone.pro
-''')
-    episodes = input('''Enter the number of episodes you want to download
-m - Episode m
-m,n - From episode m to n (m <= n)
-m,-1 - From episode m to final
-All - From episode 1 until final episode
-(Enter 1 if its a movie)
-''')
-    ep = len(re.findall("[0-9]+",url)[-1])
-    url = url[:-ep]
-    
+    continue_download = True
 
-    if episodes.lower()[0] == 'a':
-        download_episodes(url, 1, -1)
-    elif len(episodes.split(','))>1:
-        download_episodes(url, int(episodes.split(',')[0]), int(episodes.split(',')[1]))
-    else:
-        download_episodes(url, int(episodes), int(episodes))
+    while continue_download:
+        url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
+    https://goone.pro
+    ''')
+        episodes = input('''Enter the number of episodes you want to download
+    m - Episode m
+    m,n - From episode m to n (m <= n)
+    m,-1 - From episode m to final
+    All - From episode 1 until final episode
+    (Enter 1 if its a movie)
+    ''')
+        ep = len(re.findall("[0-9]+",url)[-1])
+        url = url[:-ep]
+        
+
+        if episodes.lower()[0] == 'a':
+            download_episodes(url, 1, -1)
+        elif len(episodes.split(','))>1:
+            download_episodes(url, int(episodes.split(',')[0]), int(episodes.split(',')[1]))
+        else:
+            download_episodes(url, int(episodes), int(episodes))
+        
+        continue_download = input("Do you want to download another anime? (y/n): ").lower() == 'y'
