@@ -46,7 +46,7 @@ def download_episode(i):
     while (".crdownload" in "".join(files)) and totaltime<time_limit:
         # print every five seconds
         if totaltime%15==0:
-            print("Downloading episode "+str(i)+".......")
+            print("Downloading episode "+str(i)+"."*((totaltime//15)+3))
 
         time.sleep(1)
         totaltime+=1
@@ -79,10 +79,7 @@ def download_episodes(url, episode_list):
             response = requests.get(url+str(current_episode))
             soup = BeautifulSoup(response.text, 'html.parser')
             videosource_link = soup.findAll('iframe')
-            if not videosource_link:
-                print("Cannot find download link for episode "+str(current_episode))
-                continue
-        
+    
         # find episode download page id
         try:
             id = re.findall("id=[0-9A-Za-z]*",str(videosource_link[0]))[0]
