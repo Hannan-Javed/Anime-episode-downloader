@@ -5,6 +5,11 @@ from selenium.webdriver.common.by import By
 import time, os
 import os
 
+# time limit for download
+time_limit = 150
+# episode to download - SUB/DUB
+episode_type = "SUB" 
+
 def get_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
     
@@ -38,7 +43,7 @@ def download_episode(i):
     if ".crdownload" not in "".join(files):
         # Episode did not start downloading
         return False
-    while (".crdownload" in "".join(files)) and totaltime<150:
+    while (".crdownload" in "".join(files)) and totaltime<time_limit:
         # print every five seconds
         if totaltime%15==0:
             print("Downloading episode "+str(i)+".......")
@@ -50,14 +55,11 @@ def download_episode(i):
         files = os.listdir(download_directory)
 
     # wait two and a half minutes before returning false
-    return totaltime<150
+    return totaltime<time_limit
 
-def download_episodes(url, start_episode, end_episode):
+def download_episodes(url, episode_list):
 
-    current_episode = start_episode
-    if end_episode == -1:
-        end_episode = 10000
-    response = requests.get(url+str(current_episode))
+    response = requests.get(url+str(episode_list[0]))
     soup = BeautifulSoup(response.text, 'html.parser')
     videosource_link = soup.findAll('iframe')
 
@@ -72,7 +74,14 @@ def download_episodes(url, start_episode, end_episode):
 
     driver = webdriver.Chrome()
     
-    while current_episode < end_episode+1:
+    for current_episode in episode_list:
+        if current_episode!=episode_list[0]:
+            response = requests.get(url+str(current_episode))
+            soup = BeautifulSoup(response.text, 'html.parser')
+            videosource_link = soup.findAll('iframe')
+            if not videosource_link:
+                print("Cannot find download link for episode "+str(episode_list[episode_list.index(current_episode) + 1]))
+                continue
         
         # find episode download page id
         try:
@@ -80,7 +89,7 @@ def download_episodes(url, start_episode, end_episode):
         except IndexError:
             print("No more episodes to download!")
             break
-        downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=SUB"
+        downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=" + episode_type
 
         # start simulating chrome
         
@@ -121,17 +130,7 @@ def download_episodes(url, start_episode, end_episode):
         else:
             # cannot download from any link
             print("Error! Cannot downloaded episode "+str(current_episode))
-    
-        # go to next page
-        current_episode+=1
-        if current_episode >= end_episode+1:
-            break
-        response = requests.get(url+str(current_episode))
-        soup = BeautifulSoup(response.text, 'html.parser')
-        videosource_link = soup.findAll('iframe')
-        if not videosource_link:
-            print("Cannot find download link for episode "+str(current_episode))
-            continue
+        
     driver.quit()
     print("All episodes downloaded!")
             
@@ -142,8 +141,8 @@ if __name__ == "__main__":
 
     while continue_download:
         url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
-    https://goone.pro
-    ''')
+https://goone.pro
+''')
         ep = re.findall("[0-9]+",url)
         while len(ep)==0:
             url = input("Invalid URL! Please enter a valid URL: ")
@@ -151,23 +150,29 @@ if __name__ == "__main__":
         ep = len(ep[-1])
         url = url[:-ep]
     
-        valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int 
+        episodes = input('''\n\nEnter the number of episodes you want to download
+All - From episode 1 until final episode
+m - Episode m
+m,n - From episode m to n (m <= n)
+m,-1 - From episode m to final
+m,n,o..... - episode m, n, o, ....
+(Enter 1 if its a movie)
+''')
+        
+        valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
 
         while not valid_link:
-            print("Invalid input! Please enter a valid range: ")
-            episodes = input('''Enter the number of episodes you want to download
-                                m - Episode m
-                                m,n - From episode m to n (m <= n)
-                                m,-1 - From episode m to final
-                                All - From episode 1 until final episode
-                                (Enter 1 if its a movie)
-                                ''')
-            
+            episodes = input("Invalid input! Please enter a valid input: ")
+            valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',') 
+
         if episodes.lower()[0] == 'a':
-            download_episodes(url, 1, -1)
-        elif len(episodes.split(','))>1:
-            download_episodes(url, int(episodes.split(',')[0]), int(episodes.split(',')[1]))
+            download_episodes(url, [1, 10000])
+        elif len(episodes.split(','))==2:
+            episodes_list = list(range(int(episodes.split(',')[0]), int(episodes.split(',')[1])+1))
+            download_episodes(url, episodes_list)
+        elif len(episodes.split(','))>2:
+            download_episodes(url, list(map(int, episodes.split(','))))
         else:
-            download_episodes(url, int(episodes), int(episodes))
+            download_episodes(url, [int(episodes)])
         
         continue_download = input("Do you want to download another anime? (y/n): ").lower() == 'y'
