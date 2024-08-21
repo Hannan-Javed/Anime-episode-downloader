@@ -19,7 +19,7 @@ Run `main.py` and input two things:
     - `m,n,o.....` - episode m, n, o, ....
     - Can just enter `1` if its a movie
 
-After inputting and clicking enter, the downloading will automatically start and it will try to download from the highest quality. If theres an error in the link, it will try the lower quality links if they work. Episode will not be downloaded if it takes longer than **Two and a half minutes** to download or **No links work**.
+After inputting and clicking enter, the downloading will automatically start and it will try to download from the highest quality. If theres an error in the link, it will try the lower quality links if they work. Episode will not be downloaded if it takes longer than **two and a half minutes** to download or **no links work**.
 By default it will download english subbed episodes. To change these, modify line 9 and 11.
 ## Note
 1. Running this will delete any undownloaded (.crdownload) files in the downloads folder
