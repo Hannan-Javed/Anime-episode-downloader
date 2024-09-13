@@ -10,7 +10,7 @@ pip install -r requirements.txt
 Make sure that you are not downloading any other file in the download folder
 ## Run
 Run `main.py` and input two things:
-1. url: Go to the website https://goone.pro and search for the anime you want to download. Go to the **first episode** of that anime and copy the URL, and paste it in the terminal.
+1. url: Go to the website https://s3taku.com and search for the anime you want to download. Go to the **first episode** of that anime and copy the URL, and paste it in the terminal.
 2. Number of episodes: Input how many episodes do you want to download. The format is:
     - `all` - From episode 1 until final episode
     - `m` - Episode m

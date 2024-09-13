@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     while continue_download:
         url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
-https://goone.pro
+https://s3taku.com
 ''')
         ep = re.findall("[0-9]+",url)
         while len(ep)==0:
