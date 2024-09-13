@@ -98,7 +98,6 @@ def download_episodes(url, episode_list):
         # main loop to iterate through all links (1080p, 720p, 480p, 360p) starting from highest if any link fails
         j=3
         while True:
-
             # clear undownloaded files before starting download
             clear_undownloaded_files()
             # find download link
@@ -115,7 +114,7 @@ def download_episodes(url, episode_list):
                 break
             else:
                 # relaunch for next page if this one was unsuccessful and still links left
-                if ".crdownload" in "".join(os.listdir(download_directory)):
+                if ".crdownload" in "".join(os.listdir(download_directory)) or len(driver.window_handles)>1:
                     driver.quit()
                     driver = webdriver.Chrome()
                 print("Restarting download with another link.....")
