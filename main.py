@@ -102,9 +102,10 @@ def download_episodes(url, episode_list):
             clear_undownloaded_files()
             # find download link
             soup = BeautifulSoup(driver.page_source, 'html.parser')
-            downloadlink = re.findall("https[A-Za-z0-9-=:/.?]*",str(soup.find_all('a')[j+1]))[0]
-            downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlink+'"]')
-            driver.execute_script("arguments[0].click();", downloadlink)
+            downloadlink = re.findall("https[A-Za-z0-9-=:/.?]*",str(soup.find_all('a')[j+1]))
+            if downloadlink:
+                downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlink[0]+'"]')
+                driver.execute_script("arguments[0].click();", downloadlink)
             # wait for download to start
             time.sleep(2)
             successful = download_episode(current_episode)
