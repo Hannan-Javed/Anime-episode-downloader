@@ -2,7 +2,11 @@
 This is the python implementation of downloading anime episodes from the website https://goone.pro automatically using selenium, which is a python libary used to simulate chrome.
 The episodes are downloaded in the download folder.
 ## Installation
-First download the required packages
+Clone the repository:
+```
+git clone https://github.com/Hannan-Javed/Anime-episode-downloader
+```
+Then download the required packages
 ```shell
 pip install -r requirements.txt
 ```
