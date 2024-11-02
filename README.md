@@ -1,5 +1,5 @@
 # Anime-episode-downloader
-This is the python implementation of downloading anime episodes from the website https://goone.pro automatically using selenium, which is a python libary used to simulate chrome.
+This is the python implementation of downloading anime episodes from the website https://s3taku.com automatically using selenium, which is a python libary used to simulate chrome.
 The episodes are downloaded in the download folder.
 ## Installation
 Clone the repository:
