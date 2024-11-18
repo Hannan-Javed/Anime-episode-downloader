@@ -64,8 +64,7 @@ def download_episodes(url, episode_list):
     videosource_link = soup.findAll('iframe')
 
     if not videosource_link:
-        print("Cannot find download link for episode "+str(current_episode))
-        current_episode+=1
+        print("Cannot find download link for episode "+str(episodes[0])+"!")
     try:
         # title is fixed so find outside loop
         title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
