@@ -4,11 +4,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 
-# time limit for download
-time_limit = 150
-# episode to download - SUB/DUB
-episode_type = "SUB" 
-
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
     
@@ -138,9 +133,11 @@ def download_episodes(url, episode_list):
         
     driver.quit()
     print("All episodes downloaded!")
-            
+
 # choose default download directory or enter your own
-download_directory = get_default_download_directory() # "/path/to/download/directory" 
+download_directory = get_default_download_directory() # "/path/to/download/directory"            
+time_limit = 150
+episode_type = "SUB" 
 
 if __name__ == "__main__":
 
