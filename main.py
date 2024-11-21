@@ -2,13 +2,14 @@ import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver import Chrome, ChromeOptions
 
 # time limit for download
 time_limit = 150
 # episode to download - SUB/DUB
 episode_type = "SUB" 
 
-def get_download_directory():
+def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
     
     # Check the operating system to determine the download directory
@@ -20,8 +21,6 @@ def get_download_directory():
         download_directory = None  # Unsupported operating system
     
     return download_directory
-
-download_directory = get_download_directory()
 
 def clear_undownloaded_files():
     # get all the files
@@ -69,7 +68,15 @@ def download_episodes(url, episode_list):
     except IndexError:
         print("No such episode exists!")
 
-    driver = webdriver.Chrome()
+    prefs = {
+    "download.default_directory": download_directory,
+    "download.directory_upgrade": True,
+    "download.prompt_for_download": False,
+    }
+
+    chromeOptions = ChromeOptions()
+    chromeOptions.add_experimental_option("prefs", prefs)
+    driver = Chrome(options=chromeOptions)
     
     for current_episode in episode_list:
         if current_episode!=episode_list[0]:
@@ -132,6 +139,8 @@ def download_episodes(url, episode_list):
     driver.quit()
     print("All episodes downloaded!")
             
+# choose default download directory or enter your own
+download_directory = get_default_download_directory() # "/path/to/download/directory" 
 
 if __name__ == "__main__":
 
