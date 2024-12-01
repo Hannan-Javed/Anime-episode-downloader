@@ -38,7 +38,7 @@ def download_episode(i):
     while (".crdownload" in "".join(files)) and totaltime<time_limit:
         # print every five seconds
         if totaltime%15==0:
-            print("Downloading episode "+str(i)+"."*(totaltime%3+1))
+            print("Downloading episode "+str(i)+"."*(totaltime//15+1))
 
         time.sleep(1)
         totaltime+=1
