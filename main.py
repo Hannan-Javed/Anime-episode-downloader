@@ -19,18 +19,18 @@ def get_default_download_directory():
 
 def clear_undownloaded_files():
     # get all the files
-    file_list = os.listdir(download_directory)
+    file_list = os.listdir(current_download_directory)
 
     # Iterate over the files and delete .crdownload files
     for file_name in file_list:
         if file_name.endswith(".crdownload"):
-            file_path = os.path.join(download_directory, file_name)
+            file_path = os.path.join(current_download_directory, file_name)
             os.remove(file_path)
 
 def download_episode(i):
     
     totaltime = 0
-    files = os.listdir(download_directory)
+    files = os.listdir(current_download_directory)
 
     if ".crdownload" not in "".join(files):
         # Episode did not start downloading
@@ -44,7 +44,7 @@ def download_episode(i):
         totaltime+=1
 
         # update file list to see if it is downloaded
-        files = os.listdir(download_directory)
+        files = os.listdir(current_download_directory)
 
     # wait two and a half minutes before returning false
     return totaltime<time_limit
@@ -64,7 +64,7 @@ def download_episodes(url, episode_list):
         print("No such episode exists!")
 
     prefs = {
-    "download.default_directory": download_directory,
+    "download.default_directory": current_download_directory,
     "download.directory_upgrade": True,
     "download.prompt_for_download": False,
     }
@@ -162,7 +162,12 @@ m,-1 - From episode m to final
 m,n,o..... - episode m, n, o, ....
 (Enter 1 if its a movie)
 ''')
-        
+        # make a directory for the anime
+        anime_name = url[url.rfind('/')+1:]
+        anime_name = anime_name.replace('-',' ').replace('episode', '').replace('dub', '').strip()
+        os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
+        current_download_directory = os.path.join(download_directory, anime_name)
+
         valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
 
         while not valid_link:
