@@ -36,7 +36,7 @@ def download_episode(i):
         # Episode did not start downloading
         return False
     while (".crdownload" in "".join(files)) and totaltime<time_limit:
-        # print every five seconds
+        # print every fifteen seconds
         if totaltime%15==0:
             print("Downloading episode "+str(i)+"."*(totaltime//15+1))
 
@@ -88,7 +88,6 @@ def download_episodes(url, episode_list):
         downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=" + episode_type
 
         # start simulating chrome
-        
         driver.get(downloadpagelink)
 
         # wait for page to load
@@ -153,7 +152,7 @@ https://s3taku.com
             ep = re.findall("[0-9]+",url)
         ep = len(ep[-1])
         url = url[:-ep]
-    
+
         episodes = input('''\n\nEnter the number of episodes you want to download
 All - From episode 1 until final episode
 m - Episode m
@@ -168,11 +167,11 @@ m,n,o..... - episode m, n, o, ....
         os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
         current_download_directory = os.path.join(download_directory, anime_name)
 
-        valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
+        valid_episodes = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
 
-        while not valid_link:
+        while not valid_episodes:
             episodes = input("Invalid input! Please enter a valid input: ")
-            valid_link = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',') 
+            valid_episodes = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
 
         if episodes.lower()[0] == 'a':
             download_episodes(url, list(range(1, 10000)))
