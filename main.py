@@ -163,7 +163,8 @@ m,n,o..... - episode m, n, o, ....
 ''')
         # make a directory for the anime
         anime_name = url[url.rfind('/')+1:]
-        anime_name = anime_name.replace('-',' ').replace('episode', '').replace('dub', '').strip()
+        anime_name = anime_name.replace('-', ' ').replace('episode', '').replace('dub', '').strip()
+        anime_name = ' '.join(word.capitalize() for word in anime_name.split())
         os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
         current_download_directory = os.path.join(download_directory, anime_name)
 
