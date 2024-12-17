@@ -116,11 +116,11 @@ def download_episodes(url, episode_list):
                 if ".crdownload" in "".join(os.listdir(download_directory)):
                     driver.quit()
                     driver = webdriver.Chrome()
-                if  len(driver.window_handles)>1:
+                if len(driver.window_handles)>1:
                     driver.switch_to.window(driver.window_handles[1])
                     driver.close()
                     driver.switch_to.window(driver.window_handles[0])
-                print("Restarting download with another link.....")
+                print("Restarting download with another link for episode"+str(current_episode)+"...")
                 driver.get(downloadpagelink)
                 # wait for page to load
                 time.sleep(3)
