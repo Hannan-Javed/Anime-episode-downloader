@@ -93,37 +93,37 @@ def download_episodes(url, episode_list):
         # wait for page to load
         time.sleep(3)
 
-        # main loop to iterate through all links (1080p, 720p, 480p, 360p) starting from highest if any link fails
-        j=3
-        while True:
-            # clear undownloaded files before starting download
+        # find number of download links, assuming last is the best quality
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        link_download_section = soup.find('div', class_='mirror_link')
+        links = link_download_section.find_all('div')
+
+        successful = False
+        # Iterate through all links (1080p, 720p, 480p, 360p) starting from highest quality
+        for link_div in reversed(links):
+            # Clear undownloaded files before starting download
             clear_undownloaded_files()
-            # find download link
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            downloadlink = re.findall("https[A-Za-z0-9-=:/.?]*",str(soup.find_all('a')[j+1]))
-            if downloadlink:
-                downloadlink = driver.find_element(By.XPATH,'//a[@href="'+downloadlink[0]+'"]')
-                driver.execute_script("arguments[0].click();", downloadlink)
-            # wait for download to start
+            # Find download link
+            downloadlink_tag = link_div.find('a')
+            if downloadlink_tag and 'href' in downloadlink_tag.attrs:
+                downloadlink = downloadlink_tag['href']
+                download_element = driver.find_element(By.XPATH, f'//a[@href="{downloadlink}"]')
+            driver.execute_script("arguments[0].click();", download_element)
+            # Wait for download to start
             time.sleep(2)
             successful = download_episode(current_episode)
-            j-=1
-
-            if successful or j==-1:
+            if successful:
                 break
             else:
-                # relaunch for next page if this one was unsuccessful and still links left
-                if ".crdownload" in "".join(os.listdir(download_directory)):
-                    driver.quit()
-                    driver = webdriver.Chrome()
-                if len(driver.window_handles)>1:
+                # Close any new tabs and retry with next link
+                if len(driver.window_handles) > 1:
                     driver.switch_to.window(driver.window_handles[1])
                     driver.close()
                     driver.switch_to.window(driver.window_handles[0])
-                print("Restarting download with another link for episode"+str(current_episode)+"...")
+                print(f"Restarting download with another link for episode {current_episode}...")
+                # either time limit exceeded or link is invalid
                 driver.get(downloadpagelink)
-                # wait for page to load
-                time.sleep(3)
+                time.sleep(3)        
         if successful:
             print("Successfully downloaded episode "+str(current_episode)+"!")
         else:
