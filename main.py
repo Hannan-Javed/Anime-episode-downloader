@@ -146,6 +146,7 @@ if __name__ == "__main__":
         url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
 https://s3taku.com
 ''')
+        url = url.strip()
         ep = re.findall("[0-9]+",url)
         while len(ep)==0:
             url = input("Invalid URL! Please enter a valid URL: ")
@@ -161,6 +162,7 @@ m,-1 - From episode m to final
 m,n,o..... - episode m, n, o, ....
 (Enter 1 if its a movie)
 ''')
+        episodes = episodes.strip()
         # make a directory for the anime
         anime_name = url[url.rfind('/')+1:]
         anime_name = anime_name.replace('-', ' ').replace('episode', '').replace('dub', '').strip()
