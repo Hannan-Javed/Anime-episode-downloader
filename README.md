@@ -13,13 +13,13 @@ pip install -r requirements.txt
 ## Run
 Run `main.py`:
 1. Enter the search key word for the anime you want to download and then select it from the menu. If no anime is in search result, you will be asked to enter search keyword again.
-2. Number of episodes: Input how many episodes do you want to download. The format is:
-    - `all` - From episode 1 until final episode
-    - `m` - Episode m
-    - `m,n` - From episode m to n (m <= n)
-    - `m,-1` - From episode m to final
-    - `m,n,o.....` - episode m, n, o, ....
-    - Can just enter `1` if its a movie
+2. Number of episodes: Input how many episodes do you want to download. The options are:
+    - All - From episode 1 until final episode
+    - m - Episode m
+    - m,n - From episode m to n (m <= n)
+    - m,-1 - From episode m to final
+    - m,n,o..... - episode m, n, o, ....
+    - 1 if its a movie
 
 After entering, the download(s) will automatically start starting from the highest quality, and lowering down in case of error; error being the episodes takes longer than **two and a half minutes** to download or that specific **link does not work**.<br>
 By default it will download english subbed episodes, which can be changed to dub.

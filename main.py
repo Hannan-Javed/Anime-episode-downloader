@@ -205,33 +205,37 @@ if __name__ == "__main__":
     while continue_download:
         anime_name, url = get_anime()
         url = "https://s3embtaku.pro/" + url
-        episodes = input('''\n\nEnter the number of episodes you want to download
-All - From episode 1 until final episode
-m - Episode m
-m,n - From episode m to n (m <= n)
-m,-1 - From episode m to final
-m,n,o..... - episode m, n, o, ....
-(Enter 1 if its a movie)
-''')
-        episodes = episodes.strip()
         # make a directory for the anime
         os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
         current_download_directory = os.path.join(download_directory, anime_name)
+        
+        download_option = list_menu_selector("Select the number of episodes you want to download:", [
+            'All - From episode 1 until final episode',
+            'm - Episode m',
+            'm,n - From episode m to n (m <= n)',
+            'm,-1 - From episode m to final',
+            'm,n,o..... - episode m, n, o, ....',
+            '1 - do this if it\'s a movie'
+        ])
 
-        valid_episodes = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
-
-        while not valid_episodes:
-            episodes = input("Invalid input! Please enter a valid input: ")
-            valid_episodes = episodes.lower()[0] == 'a' or len(episodes.split(','))>1 or type(episodes)==int or '' not in episodes.split(',')
-
-        if episodes.lower()[0] == 'a':
+        if download_option.startswith('All'):
             download_episodes(url, list(range(1, 10000)))
-        elif len(episodes.split(','))==2:
-            episodes_list = list(range(int(episodes.split(',')[0]), (int(episodes.split(',')[1])+1) if int(episodes.split(',')[1])!=-1 else 10000))
+        elif download_option.startswith('m,n,o'):
+            episodes = input("Enter the episode numbers separated by commas: ")
+            episodes_list = list(map(int, episodes.split(',')))
             download_episodes(url, episodes_list)
-        elif len(episodes.split(','))>2:
-            download_episodes(url, list(map(int, episodes.split(','))))
-        else:
-            download_episodes(url, [int(episodes)])
+        elif download_option.startswith('m,n'):
+            m = int(input("Enter the starting episode number (m): "))
+            n = int(input("Enter the ending episode number (n): "))
+            episodes_list = list(range(m, n + 1)) if n != -1 else list(range(m, 10000))
+            download_episodes(url, episodes_list)
+        elif download_option.startswith('m,-1'):
+            m = int(input("Enter the starting episode number (m): "))
+            download_episodes(url, list(range(m, 10000)))
+        elif download_option.startswith('m'):
+            m = int(input("Enter the episode number (m): "))
+            download_episodes(url, [m])
+        elif download_option.startswith('1'):
+            download_episodes(url, [1])
         
         continue_download = input("Do you want to download another anime? (y/n): ").lower() == 'y'
