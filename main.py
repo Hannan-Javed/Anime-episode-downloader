@@ -3,6 +3,18 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 from PyInquirer import prompt
+import time
+import sys
+import threading
+
+def loading_animation(message, stop_event):
+    while not stop_event.is_set():
+        for dots in range(4):  # 0 to 3 dots
+            sys.stdout.write("\r" + message + " " * 4)
+            sys.stdout.flush()
+            sys.stdout.write("\r" + message + "." * dots)
+            sys.stdout.flush()
+            time.sleep(0.5)
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
@@ -95,19 +107,25 @@ def download_episode(i):
     if ".crdownload" not in "".join(files):
         # Episode did not start downloading
         return False
-    while (".crdownload" in "".join(files)) and totaltime<time_limit:
-        # print every fifteen seconds
-        if totaltime%15==0:
-            print("Downloading episode "+str(i)+"."*(totaltime//15+1))
+    
+    message = f"Downloading episode {i}"
+    stop_event = threading.Event()
+    animation_thread = threading.Thread(target=loading_animation, args=(message, stop_event))
+    animation_thread.start()
 
-        time.sleep(1)
-        totaltime+=1
-
-        # update file list to see if it is downloaded
-        files = os.listdir(current_download_directory)
+    try:
+        while (".crdownload" in "".join(files)) and totaltime < time_limit:
+            time.sleep(1)
+            totaltime += 1
+            # update file list to see if it is downloaded
+            files = os.listdir(current_download_directory)
+    finally:
+        stop_event.set()
+        animation_thread.join()
+        print("\n")
 
     # wait two and a half minutes before returning false
-    return totaltime<time_limit
+    return totaltime < time_limit
 
 def download_episodes(url, episode_list):
 
