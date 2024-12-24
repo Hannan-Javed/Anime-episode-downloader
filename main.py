@@ -15,6 +15,7 @@ def loading_animation(message, stop_event):
             sys.stdout.write("\r" + message + "." * dots)
             sys.stdout.flush()
             time.sleep(0.5)
+    print()
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
