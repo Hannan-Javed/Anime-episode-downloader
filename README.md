@@ -11,8 +11,8 @@ Then download the required packages
 pip install -r requirements.txt
 ```
 ## Run
-Run `main.py` and input :
-1. url: Go to the website https://s3embtaku.pro/ and search for the anime you want to download. Copy the URL, and paste it in the terminal.
+Run `main.py`:
+1. Enter the search key word for the anime you want to download and then select it from the menu. If no anime is in search result, you will be asked to enter search keyword again.
 2. Number of episodes: Input how many episodes do you want to download. The format is:
     - `all` - From episode 1 until final episode
     - `m` - Episode m
