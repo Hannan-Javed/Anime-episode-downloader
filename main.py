@@ -2,6 +2,7 @@ import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
+from PyInquirer import prompt
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
@@ -16,6 +17,66 @@ def get_default_download_directory():
     
     return download_directory
 
+def list_menu_selector(qprompt, anime_list):
+    menu = prompt(
+            [
+                {
+                    'type': 'list',
+                    'name': 'name',
+                    'message': qprompt,
+                    'choices': anime_list,
+                }
+            ]
+        )
+    return menu['name']
+
+def get_anime():
+    anime_name = input("Enter the name of the anime you want to download: ")
+    page = 1
+    base_url = "https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
+
+    anime_data = []
+
+    while True:
+        response = requests.get(base_url.format(anime_name=anime_name, page=page))
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Find the anime listings
+        anime_list = soup.find_all('li', class_='video-block')
+
+        while not anime_list:
+            anime_name = input("No anime found with the name: "+anime_name+". Please enter the name of the anime you want to download: ")
+            response = requests.get(base_url.format(anime_name=anime_name, page=page))
+            soup = BeautifulSoup(response.text, 'html.parser')
+            anime_list = soup.find_all('li', class_='video-block')
+        
+        for anime in anime_list:
+            # Find the anchor tag
+            link = anime.find('a')
+            if link:
+                # Extract href and name
+                href = link['href']
+                name = link.find('div', class_='name').text.strip()
+                name = ' '.join(name.split()[:-2])  # Strip the last two words which are always "episode xx"
+                anime_data.append({'name': name, 'href': href})
+        # Check for pagination to see if there are more pages
+        pagination = soup.find('ul', class_='pagination')
+        if not pagination:
+            break # No pagination
+        next_page = pagination.find('li', class_='next')
+        if not next_page:
+            break  # No more pages
+        page += 1 
+
+        if len(anime_data) == 0:
+            print("No anime found with the name: "+anime_name)
+            anime_name = input("Please enter the name of the anime you want to download: ")
+            page = 1
+    
+    anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_data])
+    url = anime_data[[a['name'] for a in anime_data].index(anime)]['href']
+    # return the anime name and url after removing episode number from it
+    return anime, url[:-len(re.findall("[0-9]+", url)[-1])]
+        
 def clear_undownloaded_files():
     # get all the files
     file_list = os.listdir(current_download_directory)
@@ -142,17 +203,8 @@ if __name__ == "__main__":
     continue_download = True
 
     while continue_download:
-        url = input('''Go to this website and paste the link of any episode of the anime you would like to download:
-https://s3taku.com
-''')
-        url = url.strip()
-        ep = re.findall("[0-9]+",url)
-        while len(ep)==0:
-            url = input("Invalid URL! Please enter a valid URL: ")
-            ep = re.findall("[0-9]+",url)
-        ep = len(ep[-1])
-        url = url[:-ep]
-
+        anime_name, url = get_anime()
+        url = "https://s3embtaku.pro/" + url
         episodes = input('''\n\nEnter the number of episodes you want to download
 All - From episode 1 until final episode
 m - Episode m
@@ -163,9 +215,6 @@ m,n,o..... - episode m, n, o, ....
 ''')
         episodes = episodes.strip()
         # make a directory for the anime
-        anime_name = url[url.rfind('/')+1:]
-        anime_name = anime_name.replace('-', ' ').replace('episode', '').replace('dub', '').strip()
-        anime_name = ' '.join(word.capitalize() for word in anime_name.split())
         os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
         current_download_directory = os.path.join(download_directory, anime_name)
 
