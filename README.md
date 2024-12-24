@@ -1,5 +1,5 @@
 # Anime-episode-downloader
-This is the python implementation of downloading anime episodes from the website https://s3taku.com automatically using selenium, which is a python libary used to simulate chrome.<br>
+This is the python implementation of downloading anime episodes from the website https://s3embtaku.pro/ automatically using selenium, which is a python libary used to simulate chrome.<br>
 The download destination can be changed, but by default the episodes are downloaded in the download directory. A new directory is created in this specified directory for each anime using its name where the episodes will be downloaded. For different animes different directories will be created.
 ## Installation
 Clone the repository:
@@ -12,7 +12,7 @@ pip install -r requirements.txt
 ```
 ## Run
 Run `main.py` and input :
-1. url: Go to the website https://s3taku.com and search for the anime you want to download. Copy the URL, and paste it in the terminal.
+1. url: Go to the website https://s3embtaku.pro/ and search for the anime you want to download. Copy the URL, and paste it in the terminal.
 2. Number of episodes: Input how many episodes do you want to download. The format is:
     - `all` - From episode 1 until final episode
     - `m` - Episode m

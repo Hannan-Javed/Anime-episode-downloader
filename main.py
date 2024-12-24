@@ -84,7 +84,7 @@ def download_episodes(url, episode_list):
         except IndexError:
             print("No more episodes to download!")
             break
-        downloadpagelink = "https://embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=" + episode_type
+        downloadpagelink = "https://s3embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=" + episode_type
 
         # start simulating chrome
         driver.get(downloadpagelink)
