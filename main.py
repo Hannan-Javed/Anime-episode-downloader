@@ -49,40 +49,48 @@ def get_anime():
 
     anime_data = []
 
-    while True:
-        response = requests.get(base_url.format(anime_name=anime_name, page=page))
-        soup = BeautifulSoup(response.text, 'html.parser')
-        # Find the anime listings
-        anime_list = soup.find_all('li', class_='video-block')
+    stop_event = threading.Event()
+    animation_thread = threading.Thread(target=loading_animation, args=("fetching search results", stop_event))
+    animation_thread.start()
 
-        while not anime_list:
-            anime_name = input("No anime found with the name: "+anime_name+". Please enter the name of the anime you want to download: ")
+    try:
+        while True:
             response = requests.get(base_url.format(anime_name=anime_name, page=page))
             soup = BeautifulSoup(response.text, 'html.parser')
+            # Find the anime listings
             anime_list = soup.find_all('li', class_='video-block')
-        
-        for anime in anime_list:
-            # Find the anchor tag
-            link = anime.find('a')
-            if link:
-                # Extract href and name
-                href = link['href']
-                name = link.find('div', class_='name').text.strip()
-                name = ' '.join(name.split()[:-2])  # Strip the last two words which are always "episode xx"
-                anime_data.append({'name': name, 'href': href})
-        # Check for pagination to see if there are more pages
-        pagination = soup.find('ul', class_='pagination')
-        if not pagination:
-            break # No pagination
-        next_page = pagination.find('li', class_='next')
-        if not next_page:
-            break  # No more pages
-        page += 1 
 
-        if len(anime_data) == 0:
-            print("No anime found with the name: "+anime_name)
-            anime_name = input("Please enter the name of the anime you want to download: ")
-            page = 1
+            while not anime_list:
+                anime_name = input("No anime found with the name: "+anime_name+". Please enter the name of the anime you want to download: ")
+                response = requests.get(base_url.format(anime_name=anime_name, page=page))
+                soup = BeautifulSoup(response.text, 'html.parser')
+                anime_list = soup.find_all('li', class_='video-block')
+            
+            for anime in anime_list:
+                # Find the anchor tag
+                link = anime.find('a')
+                if link:
+                    # Extract href and name
+                    href = link['href']
+                    name = link.find('div', class_='name').text.strip()
+                    name = ' '.join(name.split()[:-2])  # Strip the last two words which are always "episode xx"
+                    anime_data.append({'name': name, 'href': href})
+            # Check for pagination to see if there are more pages
+            pagination = soup.find('ul', class_='pagination')
+            if not pagination:
+                break # No pagination
+            next_page = pagination.find('li', class_='next')
+            if not next_page:
+                break  # No more pages
+            page += 1 
+
+            if len(anime_data) == 0:
+                print("No anime found with the name: "+anime_name)
+                anime_name = input("Please enter the name of the anime you want to download: ")
+                page = 1
+    finally:
+        stop_event.set()
+        animation_thread.join()
     
     anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_data])
     url = anime_data[[a['name'] for a in anime_data].index(anime)]['href']
