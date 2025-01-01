@@ -10,7 +10,7 @@ import threading
 def loading_animation(message, stop_event):
     while not stop_event.is_set():
         for dots in range(4):  # 0 to 3 dots
-            sys.stdout.write("\r" + message + " " * 4)
+            sys.stdout.write("\r" + message + " " * 4) # clear previous dots
             sys.stdout.flush()
             sys.stdout.write("\r" + message + "." * dots)
             sys.stdout.flush()
@@ -46,47 +46,43 @@ def list_menu_selector(qprompt, anime_list):
 def get_anime():
     anime_name = input("Enter the name of the anime you want to download: ")
     page = 1
-    base_url = "https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
 
     anime_data = []
 
     stop_event = threading.Event()
-    animation_thread = threading.Thread(target=loading_animation, args=("fetching search results", stop_event))
+    animation_thread = threading.Thread(target=loading_animation, args=("Fetching search results", stop_event))
     animation_thread.start()
 
     try:
         while True:
-            response = requests.get(base_url.format(anime_name=anime_name, page=page))
+            base_url = f"https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
+            response = requests.get(base_url)
             soup = BeautifulSoup(response.text, 'html.parser')
             # Find the anime listings
             anime_list = soup.find_all('li', class_='video-block')
 
             while not anime_list:
-                anime_name = input("No anime found with the name: "+anime_name+". Please enter the name of the anime you want to download: ")
-                response = requests.get(base_url.format(anime_name=anime_name, page=page))
+                anime_name = input(f"No anime found with the name: {anime_name}. Please enter a different name: ")
+                base_url = f"https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
+                response = requests.get(base_url)
                 soup = BeautifulSoup(response.text, 'html.parser')
                 anime_list = soup.find_all('li', class_='video-block')
             
             for anime in anime_list:
-                # Find the anchor tag
                 link = anime.find('a')
                 if link:
-                    # Extract href and name
                     href = link['href']
                     name = link.find('div', class_='name').text.strip()
-                    name = ' '.join(name.split()[:-2])  # Strip the last two words which are always "episode xx"
+                    name = ' '.join(name.split()[:-2])  # Remove "episode xx"
                     anime_data.append({'name': name, 'href': href})
-            # Check for pagination to see if there are more pages
+            # Check for pagination
             pagination = soup.find('ul', class_='pagination')
-            if not pagination:
-                break # No pagination
-            next_page = pagination.find('li', class_='next')
-            if not next_page:
-                break  # No more pages
+            if not pagination or not pagination.find('li', class_='next'):
+                break
             page += 1 
 
-            if len(anime_data) == 0:
-                print("No anime found with the name: "+anime_name)
+            if not anime_data:
+                print(f"No anime found with the name: {anime_name}")
                 anime_name = input("Please enter the name of the anime you want to download: ")
                 page = 1
     finally:
@@ -94,9 +90,8 @@ def get_anime():
         animation_thread.join()
     
     anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_data])
-    url = anime_data[[a['name'] for a in anime_data].index(anime)]['href']
-    # return the anime name and url after removing episode number from it
-    return anime, url[:-len(re.findall("[0-9]+", url)[-1])]
+    url = next(a['href'] for a in anime_data if a['name'] == anime)
+    return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
         
 def clear_undownloaded_files():
     # get all the files
@@ -108,114 +103,100 @@ def clear_undownloaded_files():
             file_path = os.path.join(current_download_directory, file_name)
             os.remove(file_path)
 
-def download_episode(i):
-    
-    totaltime = 0
+def download_episode(episode_number):
+    total_time = 0
     files = os.listdir(current_download_directory)
 
     if ".crdownload" not in "".join(files):
-        # Episode did not start downloading
-        return False
+        return False  # Episode did not start downloading
     
-    message = f"Downloading episode {i}"
+    message = f"Downloading episode {episode_number}"
     stop_event = threading.Event()
     animation_thread = threading.Thread(target=loading_animation, args=(message, stop_event))
     animation_thread.start()
 
     try:
-        while (".crdownload" in "".join(files)) and totaltime < time_limit:
+        while (".crdownload" in "".join(files)) and total_time < time_limit:
             time.sleep(1)
-            totaltime += 1
-            # update file list to see if it is downloaded
+            total_time += 1
+            # Update the list of files
             files = os.listdir(current_download_directory)
     finally:
         stop_event.set()
         animation_thread.join()
         print("\n")
 
-    # wait two and a half minutes before returning false
-    return totaltime < time_limit
+    return total_time < time_limit
 
 def download_episodes(url, episode_list):
-
-    response = requests.get(url+str(episode_list[0]))
+    response = requests.get(f"{url}{episode_list[0]}")
     soup = BeautifulSoup(response.text, 'html.parser')
-    videosource_link = soup.findAll('iframe')
+    videosource_link = soup.find_all('iframe')
 
     if not videosource_link:
-        print("Cannot find download link for episode "+str(episodes[0])+"!")
+        print(f"Cannot find download link for episode {episode_list[0]}!")
+        return
+
     try:
-        # title is fixed so find outside loop
-        title = "&"+re.findall("title=[A-Za-z+]*",str(videosource_link[0]))[0]
+        title = f"&{re.findall('title=[A-Za-z+]*', str(videosource_link[0]))[0]}"
     except IndexError:
         print("No such episode exists!")
+        return
 
     prefs = {
-    "download.default_directory": current_download_directory,
-    "download.directory_upgrade": True,
-    "download.prompt_for_download": False,
+        "download.default_directory": current_download_directory,
+        "download.directory_upgrade": True,
+        "download.prompt_for_download": False,
     }
 
-    chromeOptions = ChromeOptions()
-    chromeOptions.add_experimental_option("prefs", prefs)
-    driver = Chrome(options=chromeOptions)
+    chrome_options = ChromeOptions()
+    chrome_options.add_experimental_option("prefs", prefs)
+    driver = Chrome(options=chrome_options)
     
     for current_episode in episode_list:
-        if current_episode!=episode_list[0]:
-            response = requests.get(url+str(current_episode))
+        if current_episode != episode_list[0]:
+            response = requests.get(f"{url}{current_episode}")
             soup = BeautifulSoup(response.text, 'html.parser')
-            videosource_link = soup.findAll('iframe')
+            videosource_link = soup.find_all('iframe')
     
-        # find episode download page id
         try:
-            id = re.findall("id=[0-9A-Za-z]*",str(videosource_link[0]))[0]
+            episode_id = re.findall("id=[0-9A-Za-z]*", str(videosource_link[0]))[0]
         except IndexError:
             print("No more episodes to download!")
             break
-        downloadpagelink = "https://s3embtaku.pro/download?"+id+title+str(current_episode)+"&typesub=" + episode_type
+        download_page_link = f"https://s3embtaku.pro/download?{episode_id}{title}{current_episode}&typesub={episode_type}"
 
-        # start simulating chrome
-        driver.get(downloadpagelink)
-
-        # wait for page to load
+        driver.get(download_page_link)
         time.sleep(3)
 
-        # find number of download links, assuming last is the best quality
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         link_download_section = soup.find('div', class_='mirror_link')
         links = link_download_section.find_all('div')
 
         successful = False
-        # Iterate through all links (1080p, 720p, 480p, 360p) starting from highest quality
         for link_div in reversed(links):
-            # Clear undownloaded files before starting download
             clear_undownloaded_files()
-            # Find download link
-            downloadlink_tag = link_div.find('a')
-            if downloadlink_tag and 'href' in downloadlink_tag.attrs:
-                downloadlink = downloadlink_tag['href']
-                download_element = driver.find_element(By.XPATH, f'//a[@href="{downloadlink}"]')
-            driver.execute_script("arguments[0].click();", download_element)
-            # Wait for download to start
-            time.sleep(2)
-            successful = download_episode(current_episode)
-            if successful:
-                break
-            else:
-                # Close any new tabs and retry with next link
-                if len(driver.window_handles) > 1:
-                    driver.switch_to.window(driver.window_handles[1])
-                    driver.close()
-                    driver.switch_to.window(driver.window_handles[0])
-                print(f"Restarting download with another link for episode {current_episode}...")
-                # either time limit exceeded or link is invalid
-                driver.get(downloadpagelink)
-                time.sleep(3)        
+            download_link_tag = link_div.find('a')
+            if download_link_tag and 'href' in download_link_tag.attrs:
+                download_link = download_link_tag['href']
+                download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
+                driver.execute_script("arguments[0].click();", download_element)
+                time.sleep(2)
+                successful = download_episode(current_episode)
+                if successful:
+                    break
+                else:
+                    if len(driver.window_handles) > 1:
+                        driver.switch_to.window(driver.window_handles[1])
+                        driver.close()
+                        driver.switch_to.window(driver.window_handles[0])
+                    print(f"Retrying download with another link for episode {current_episode}...")
+                    driver.get(download_page_link)
+                    time.sleep(3)        
         if successful:
-            print("Successfully downloaded episode "+str(current_episode)+"!")
+            print(f"Successfully downloaded episode {current_episode}!")
         else:
-            # cannot download from any link
-            print("Error! Cannot downloaded episode "+str(current_episode))
+            print(f"Error! Cannot download episode {current_episode}")
         
     driver.quit()
     print("All episodes downloaded!")
@@ -226,13 +207,11 @@ time_limit = 150
 episode_type = "SUB" 
 
 if __name__ == "__main__":
-
     continue_download = True
 
     while continue_download:
         anime_name, url = get_anime()
-        url = "https://s3embtaku.pro/" + url
-        # make a directory for the anime
+        url = f"https://s3embtaku.pro/{url}"
         os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
         current_download_directory = os.path.join(download_directory, anime_name)
         
@@ -241,8 +220,8 @@ if __name__ == "__main__":
             'm - Episode m',
             'm,n - From episode m to n (m <= n)',
             'm,-1 - From episode m to final',
-            'm,n,o..... - episode m, n, o, ....',
-            '1 - do this if it\'s a movie'
+            'm,n,o..... - Episodes m, n, o, ....',
+            '1 - Download if it\'s a movie'
         ])
 
         if download_option.startswith('All'):
