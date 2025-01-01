@@ -26,3 +26,4 @@ By default it will download english subbed episodes, which can be changed to dub
 ## Note
 1. Closing the opened chrome tab will terminate the program
 2. The script can download same episodes multiple times
+3. If there is an authentication issue, open chrome and manually authenticate it once. Afterwards there should be no issue in downloading episodes automatically.
