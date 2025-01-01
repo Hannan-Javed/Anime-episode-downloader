@@ -205,6 +205,7 @@ def download_episodes(url, episode_list):
 download_directory = get_default_download_directory() # "/path/to/download/directory"            
 time_limit = 150
 episode_type = "SUB" 
+invalid_filename_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
 
 if __name__ == "__main__":
     continue_download = True
@@ -212,6 +213,9 @@ if __name__ == "__main__":
     while continue_download:
         anime_name, url = get_anime()
         url = f"https://s3embtaku.pro/{url}"
+        if any(char in anime_name for char in invalid_filename_chars):
+            for char in invalid_filename_chars:
+                anime_name = anime_name.replace(char, '')
         os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
         current_download_directory = os.path.join(download_directory, anime_name)
         
