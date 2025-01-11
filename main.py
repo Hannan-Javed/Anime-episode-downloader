@@ -5,7 +5,7 @@ from selenium.webdriver import Chrome, ChromeOptions
 from utils import list_menu_selector, with_loading_animation
 from config import download_directory, time_limit, episode_type, invalid_filename_chars
 
-@with_loading_animation("fetching results")
+@with_loading_animation("Fetching Results")
 def fetch_results(anime_name, page=1):
     anime_data = []
     while True:
@@ -58,7 +58,7 @@ def clear_undownloaded_files():
             file_path = os.path.join(current_download_directory, file_name)
             os.remove(file_path)
 
-@with_loading_animation(lambda episode_number: f"downloading episode {episode_number}")
+@with_loading_animation(lambda episode_number: f"Downloading Episode {episode_number}")
 def download_episode(episode_number):
     # dummy assignment to avoid IDE warning
     _ = episode_number
