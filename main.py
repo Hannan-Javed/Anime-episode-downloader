@@ -174,12 +174,6 @@ def download_episodes(url, episode_list):
     driver.quit()
     print("All episodes downloaded!")
 
-# choose default download directory or enter your own
-download_directory = get_default_download_directory() # "/path/to/download/directory"            
-time_limit = 150
-episode_type = "SUB" 
-invalid_filename_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
-
 if __name__ == "__main__":
     continue_download = True
 
