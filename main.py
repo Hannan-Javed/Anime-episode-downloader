@@ -2,6 +2,8 @@ import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
 from config import DOWNLOAD_DIRECTORY, TIME_LIMIT, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
@@ -105,7 +107,7 @@ def download_episodes(url, episode_list):
         download_page_link = f"https://s3embtaku.pro/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
         driver.get(download_page_link)
-        time.sleep(3)
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
 
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         link_download_section = soup.find('div', class_='mirror_link')
