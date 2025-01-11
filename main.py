@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
-from config import download_directory, time_limit, episode_type, invalid_filename_chars
+from config import DOWNLOAD_DIRECTORY, TIME_LIMIT, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
 @with_loading_animation("Fetching Results")
 def fetch_results(anime_name, page=1):
@@ -58,13 +58,13 @@ def download_episode(episode_number):
     if ".crdownload" not in "".join(files):
         return False  # Episode did not start downloading
 
-    while (".crdownload" in "".join(files)) and total_time < time_limit:
+    while (".crdownload" in "".join(files)) and total_time < TIME_LIMIT:
         time.sleep(1)
         total_time += 1
         # Update the list of files
         files = os.listdir(current_download_directory)
 
-    return total_time < time_limit
+    return total_time < TIME_LIMIT
 
 def download_episodes(url, episode_list):
     response = requests.get(f"{url}{episode_list[0]}")
@@ -102,7 +102,7 @@ def download_episodes(url, episode_list):
         except IndexError:
             print("No more episodes to download!")
             break
-        download_page_link = f"https://s3embtaku.pro/download?{episode_id}{title}{current_episode}&typesub={episode_type}"
+        download_page_link = f"https://s3embtaku.pro/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
         driver.get(download_page_link)
         time.sleep(3)
@@ -145,11 +145,11 @@ if __name__ == "__main__":
     while continue_download:
         anime_name, url = get_anime()
         url = f"https://s3embtaku.pro/{url}"
-        if any(char in anime_name for char in invalid_filename_chars):
-            for char in invalid_filename_chars:
+        if any(char in anime_name for char in INVALID_FILENAME_CHARS):
+            for char in INVALID_FILENAME_CHARS:
                 anime_name = anime_name.replace(char, '')
-        os.makedirs(os.path.join(download_directory, anime_name), exist_ok=True)
-        current_download_directory = os.path.join(download_directory, anime_name)
+        os.makedirs(os.path.join(DOWNLOAD_DIRECTORY, anime_name), exist_ok=True)
+        current_download_directory = os.path.join(DOWNLOAD_DIRECTORY, anime_name)
         
         download_option = list_menu_selector("Select the number of episodes you want to download:", [
             'All - From episode 1 until final episode',

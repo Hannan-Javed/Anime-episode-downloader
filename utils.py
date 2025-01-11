@@ -2,7 +2,6 @@ import os, threading, sys, time
 from PyInquirer import prompt
 from functools import wraps
 from typing import Callable, Union
-from config import current_download_directory
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
@@ -16,6 +15,8 @@ def get_default_download_directory():
         download_directory = None  # Unsupported operating system
     
     return download_directory
+
+from config import DOWNLOAD_DIRECTORY
 
 def list_menu_selector(qprompt, anime_list):
     menu = prompt(
@@ -32,12 +33,12 @@ def list_menu_selector(qprompt, anime_list):
         
 def clear_undownloaded_files():
     # get all the files
-    file_list = os.listdir(current_download_directory)
+    file_list = os.listdir(DOWNLOAD_DIRECTORY)
 
     # Iterate over the files and delete .crdownload files
     for file_name in file_list:
         if file_name.endswith(".crdownload"):
-            file_path = os.path.join(current_download_directory, file_name)
+            file_path = os.path.join(DOWNLOAD_DIRECTORY, file_name)
             os.remove(file_path)
 
 def loading_animation(message, stop_event):
