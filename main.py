@@ -5,6 +5,8 @@ from selenium.webdriver import Chrome, ChromeOptions
 import time
 import sys
 import threading
+from utils import list_menu_selector
+from config import download_directory, time_limit, episode_type, invalid_filename_chars
 
 def loading_animation(message, stop_event):
     while not stop_event.is_set():
