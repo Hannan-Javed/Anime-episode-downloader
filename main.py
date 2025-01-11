@@ -1,10 +1,7 @@
-import requests, re, time, os
+import requests, re, time, os, threading, sys
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
-import time
-import sys
-import threading
 from utils import list_menu_selector
 from config import download_directory, time_limit, episode_type, invalid_filename_chars
 
