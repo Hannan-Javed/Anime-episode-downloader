@@ -5,13 +5,13 @@ from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
-from config import DOWNLOAD_DIRECTORY, TIME_LIMIT, EPISODE_TYPE, INVALID_FILENAME_CHARS
+from config import BASE_URL, DOWNLOAD_DIRECTORY, TIME_LIMIT, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
 @with_loading_animation("Fetching Results")
 def fetch_results(anime_name, page=1):
     anime_data = []
     while True:
-        base_url = f"https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
+        base_url = f"{BASE_URL}/search.html?keyword={anime_name}&page={page}"
         response = requests.get(base_url)
         soup = BeautifulSoup(response.text, 'html.parser')
         # Find the anime listings
@@ -104,7 +104,7 @@ def download_episodes(url, episode_list):
         except IndexError:
             print("No more episodes to download!")
             break
-        download_page_link = f"https://s3embtaku.pro/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
+        download_page_link = f"{BASE_URL}/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
         driver.get(download_page_link)
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     while continue_download:
         anime_name, url = get_anime()
-        url = f"https://s3embtaku.pro/{url}"
+        url = f"{BASE_URL}/{url}"
         if any(char in anime_name for char in INVALID_FILENAME_CHARS):
             for char in INVALID_FILENAME_CHARS:
                 anime_name = anime_name.replace(char, '')
