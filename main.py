@@ -2,67 +2,50 @@ import requests, re, time, os, threading, sys
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
-from utils import list_menu_selector
+from utils import list_menu_selector, with_loading_animation
 from config import download_directory, time_limit, episode_type, invalid_filename_chars
 
-def loading_animation(message, stop_event):
-    while not stop_event.is_set():
-        for dots in range(4):  # 0 to 3 dots
-            sys.stdout.write("\r" + message + " " * 4) # clear previous dots
-            sys.stdout.flush()
-            sys.stdout.write("\r" + message + "." * dots)
-            sys.stdout.flush()
-            time.sleep(0.5)
-    print()
+@with_loading_animation("fetching results")
+def fetch_results(anime_name, page=1):
+    anime_data = []
+    while True:
+        base_url = f"https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
+        response = requests.get(base_url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Find the anime listings
+        anime_list = soup.find_all('li', class_='video-block')
+
+        if not anime_list:
+            break
+
+        for anime in anime_list:
+            link = anime.find('a')
+            if link:
+                href = link['href']
+                name = link.find('div', class_='name').text.strip()
+                name = ' '.join(name.split()[:-2])  # Remove "episode xx"
+                anime_data.append({'name': name, 'href': href})
+        # Check for pagination
+        pagination = soup.find('ul', class_='pagination')
+        if not pagination or not pagination.find('li', class_='next'):
+            break
+        page += 1
+
+    return anime_data
 
 def get_anime():
     anime_name = input("Enter the name of the anime you want to download: ")
-    page = 1
 
-    anime_data = []
+    anime_list = fetch_results(anime_name)
 
-    stop_event = threading.Event()
-    animation_thread = threading.Thread(target=loading_animation, args=("Fetching search results", stop_event))
-    animation_thread.start()
-
-    try:
-        while True:
-            base_url = f"https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
-            response = requests.get(base_url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            # Find the anime listings
-            anime_list = soup.find_all('li', class_='video-block')
-
-            while not anime_list:
-                anime_name = input(f"No anime found with the name: {anime_name}. Please enter a different name: ")
-                base_url = f"https://s3embtaku.pro/search.html?keyword={anime_name}&page={page}"
-                response = requests.get(base_url)
-                soup = BeautifulSoup(response.text, 'html.parser')
-                anime_list = soup.find_all('li', class_='video-block')
-            
-            for anime in anime_list:
-                link = anime.find('a')
-                if link:
-                    href = link['href']
-                    name = link.find('div', class_='name').text.strip()
-                    name = ' '.join(name.split()[:-2])  # Remove "episode xx"
-                    anime_data.append({'name': name, 'href': href})
-            # Check for pagination
-            pagination = soup.find('ul', class_='pagination')
-            if not pagination or not pagination.find('li', class_='next'):
-                break
-            page += 1 
-
-            if not anime_data:
-                print(f"No anime found with the name: {anime_name}")
-                anime_name = input("Please enter the name of the anime you want to download: ")
-                page = 1
-    finally:
-        stop_event.set()
-        animation_thread.join()
+    while not anime_list:
+        print(f"No anime found with the name: {anime_name}")
+        anime_name = input("Please enter the name of the anime you want to download: ")
+        anime_list = fetch_results(anime_name)
+        
     
-    anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_data])
-    url = next(a['href'] for a in anime_data if a['name'] == anime)
+    anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_list])
+    url = next(a['href'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
         
 def clear_undownloaded_files():
@@ -75,28 +58,21 @@ def clear_undownloaded_files():
             file_path = os.path.join(current_download_directory, file_name)
             os.remove(file_path)
 
+@with_loading_animation(lambda episode_number: f"downloading episode {episode_number}")
 def download_episode(episode_number):
+    # dummy assignment to avoid IDE warning
+    _ = episode_number
     total_time = 0
     files = os.listdir(current_download_directory)
 
     if ".crdownload" not in "".join(files):
         return False  # Episode did not start downloading
-    
-    message = f"Downloading episode {episode_number}"
-    stop_event = threading.Event()
-    animation_thread = threading.Thread(target=loading_animation, args=(message, stop_event))
-    animation_thread.start()
 
-    try:
-        while (".crdownload" in "".join(files)) and total_time < time_limit:
-            time.sleep(1)
-            total_time += 1
-            # Update the list of files
-            files = os.listdir(current_download_directory)
-    finally:
-        stop_event.set()
-        animation_thread.join()
-        print("\n")
+    while (".crdownload" in "".join(files)) and total_time < time_limit:
+        time.sleep(1)
+        total_time += 1
+        # Update the list of files
+        files = os.listdir(current_download_directory)
 
     return total_time < time_limit
 
