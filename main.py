@@ -2,7 +2,6 @@ import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
-from PyInquirer import prompt
 import time
 import sys
 import threading
@@ -16,32 +15,6 @@ def loading_animation(message, stop_event):
             sys.stdout.flush()
             time.sleep(0.5)
     print()
-
-def get_default_download_directory():
-    home_directory = os.path.expanduser("~")  # Get user's home directory
-    
-    # Check the operating system to determine the download directory
-    if os.name == 'posix':  # Linux or macOS
-        download_directory = os.path.join(home_directory, 'Downloads')
-    elif os.name == 'nt':  # Windows
-        download_directory = os.path.join(home_directory, 'Downloads')
-    else:
-        download_directory = None  # Unsupported operating system
-    
-    return download_directory
-
-def list_menu_selector(qprompt, anime_list):
-    menu = prompt(
-            [
-                {
-                    'type': 'list',
-                    'name': 'name',
-                    'message': qprompt,
-                    'choices': anime_list,
-                }
-            ]
-        )
-    return menu['name']
 
 def get_anime():
     anime_name = input("Enter the name of the anime you want to download: ")
