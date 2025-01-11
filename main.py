@@ -2,7 +2,7 @@ import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
-from utils import list_menu_selector, with_loading_animation
+from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
 from config import download_directory, time_limit, episode_type, invalid_filename_chars
 
 @with_loading_animation("Fetching Results")
@@ -47,16 +47,6 @@ def get_anime():
     anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_list])
     url = next(a['href'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
-        
-def clear_undownloaded_files():
-    # get all the files
-    file_list = os.listdir(current_download_directory)
-
-    # Iterate over the files and delete .crdownload files
-    for file_name in file_list:
-        if file_name.endswith(".crdownload"):
-            file_path = os.path.join(current_download_directory, file_name)
-            os.remove(file_path)
 
 @with_loading_animation(lambda episode_number: f"Downloading Episode {episode_number}")
 def download_episode(episode_number):
