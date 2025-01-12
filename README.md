@@ -1,6 +1,5 @@
 # Anime-episode-downloader
 This is the python implementation of downloading anime episodes from the website https://s3embtaku.pro/ automatically using selenium, which is a python libary used to simulate chrome.<br>
-The download destination can be changed, but by default the episodes are downloaded in the download directory. A new directory is created in this specified directory for each anime using its name where the episodes will be downloaded. For different animes different directories will be created.
 ## Installation
 Clone the repository:
 ```
@@ -22,7 +21,10 @@ Run `main.py`:
     - 1 if its a movie
 
 After entering, the download(s) will automatically start starting from the highest quality, and lowering down in case of error; error being the episodes takes longer than **two and a half minutes** to download or that specific **link does not work**.<br>
-By default it will download english subbed episodes, which can be changed to dub.
+You can change some configurations inside `config.py`:
+- `SUB` or `DUB`
+- Max time limit for an episode to download
+- Download folder. Use `get_default_download_directory()` to get the default location.
 ## Note
 1. Closing the opened chrome tab will terminate the program
 2. The script can download same episodes multiple times
