@@ -127,17 +127,20 @@ def download_episodes(url, episode_list):
                 if successful:
                     break
                 else:
-                    # case where link opens another browser (invalid link)
+                    # case where link opens another tab (invalid link)
                     if len(driver.window_handles) == 2:
                         driver.switch_to.window(driver.window_handles[1])
                         driver.close()
                         driver.switch_to.window(driver.window_handles[0])
-                    else:
+                    elif ".crdownload" in "".join(os.listdir(current_download_directory)):
                         # case where download is not complete within time limit
                         driver.get("chrome://downloads/")
                         driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='cancel']\").click()")
                         driver.get(download_page_link)
                         time.sleep(3)
+                    else:
+                        # case where link is wrong, but does not open another tab
+                        driver.get(download_page_link)
                     print(f"Retrying download with another link for episode {current_episode}...")
         if successful:
             print(f"Successfully downloaded episode {current_episode}!")
