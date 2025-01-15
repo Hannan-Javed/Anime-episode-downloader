@@ -26,7 +26,7 @@ def fetch_results(anime_name, page=1):
                 href = link['href']
                 name = link.find('div', class_='name').text.strip()
                 name = ' '.join(name.split()[:-2])  # Remove "episode xx"
-                if "dub" not in name.lower():
+                if "(Dub)" not in name[len(name) - 5:]:
                     anime_data.append({'name': name, 'href': href})
         # Check for pagination
         pagination = soup.find('ul', class_='pagination')
