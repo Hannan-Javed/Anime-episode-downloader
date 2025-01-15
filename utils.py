@@ -31,14 +31,14 @@ def list_menu_selector(qprompt, anime_list):
         )
     return menu['name']
         
-def clear_undownloaded_files():
+def clear_undownloaded_files(download_directory):
     # get all the files
-    file_list = os.listdir(DOWNLOAD_DIRECTORY)
+    file_list = os.listdir(download_directory)
 
     # Iterate over the files and delete .crdownload files
     for file_name in file_list:
         if file_name.endswith(".crdownload"):
-            file_path = os.path.join(DOWNLOAD_DIRECTORY, file_name)
+            file_path = os.path.join(download_directory, file_name)
             os.remove(file_path)
 
 def loading_animation(message, stop_event):

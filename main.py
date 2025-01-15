@@ -116,7 +116,7 @@ def download_episodes(url, episode_list):
 
         successful = False
         for link_div in reversed(links):
-            clear_undownloaded_files()
+            clear_undownloaded_files(current_download_directory)
             download_link_tag = link_div.find('a')
             if download_link_tag and 'href' in download_link_tag.attrs:
                 download_link = download_link_tag['href']
