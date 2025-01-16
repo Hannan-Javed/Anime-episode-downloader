@@ -20,10 +20,9 @@ Run `main.py`:
     - m,n,o..... - episode m, n, o, ....
     - 1 if its a movie
 
-After entering, the download(s) will automatically start starting from the highest quality, and lowering down in case of error; error being the episodes takes longer than **two and a half minutes** to download or that specific **link does not work**.<br>
-You can change some configurations inside `config.py`:
+After entering, the download(s) will automatically start starting from the highest quality, and lowering down in case of error; error being the that specific **link does not work**.<br>
+You can change these configurations inside `config.py`:
 - `SUB` or `DUB`
-- Max time limit for an episode to download
 - Download folder. Use `get_default_download_directory()` to get the default location.
 ## Note
 1. Dubbed anime will not show up in the list. Change to `DUB` inside `config.py` to download dubbed version.

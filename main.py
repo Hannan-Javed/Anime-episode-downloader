@@ -1,11 +1,11 @@
-import requests, re, time, os
+import requests, re, time, os, sys
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
-from config import BASE_URL, DOWNLOAD_DIRECTORY, TIME_LIMIT, EPISODE_TYPE, INVALID_FILENAME_CHARS
+from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
 @with_loading_animation("Fetching Results")
 def fetch_results(anime_name, page=1):
@@ -51,23 +51,32 @@ def get_anime():
     url = next(a['href'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
 
-@with_loading_animation(lambda episode_number: f"Downloading Episode {episode_number}")
-def download_episode(episode_number):
-    # dummy assignment to avoid IDE warning
-    _ = episode_number
-    total_time = 0
+def download_episode(driver, episode_number):
     files = os.listdir(current_download_directory)
-
     if ".crdownload" not in "".join(files):
         return False  # Episode did not start downloading
 
-    while (".crdownload" in "".join(files)) and total_time < TIME_LIMIT:
-        time.sleep(1)
-        total_time += 1
-        # Update the list of files
-        files = os.listdir(current_download_directory)
+    driver.get("chrome://downloads/")
+    spinner = ['|', '/', '-', '\\']
+    spinner_index = 0
+    
+    print(f"Downloading episode {episode_number}")
+    total_time = 0
+    progress = 0
+    while ".crdownload" in "".join(files):
+        new_progress = driver.execute_script("return document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector('cr-progress').value")
+        if progress != new_progress:
+            progress = new_progress
 
-    return total_time < TIME_LIMIT
+        sys.stdout.write(f"\rProgress: {progress}% {spinner[spinner_index]}")
+        sys.stdout.flush()
+        spinner_index = (spinner_index + 1) % len(spinner)
+
+        total_time += 0.1
+        time.sleep(0.1)
+
+        files = os.listdir(current_download_directory)
+    return True
 
 def download_episodes(url, episode_list):
     response = requests.get(f"{url}{episode_list[0]}")
@@ -123,24 +132,16 @@ def download_episodes(url, episode_list):
                 download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
                 driver.execute_script("arguments[0].click();", download_element)
                 time.sleep(2)
-                successful = download_episode(current_episode)
+                successful = download_episode(driver, current_episode)
                 if successful:
                     break
                 else:
-                    # case where link opens another tab (invalid link)
                     if len(driver.window_handles) == 2:
                         driver.switch_to.window(driver.window_handles[1])
                         driver.close()
                         driver.switch_to.window(driver.window_handles[0])
-                    elif ".crdownload" in "".join(os.listdir(current_download_directory)):
-                        # case where download is not complete within time limit
-                        driver.get("chrome://downloads/")
-                        driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='cancel']\").click()")
-                        driver.get(download_page_link)
-                        time.sleep(3)
-                    else:
-                        # case where link is wrong, but does not open another tab
-                        driver.get(download_page_link)
+                    driver.get(download_page_link)
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
                     print(f"Retrying download with another link for episode {current_episode}...")
         if successful:
             print(f"Successfully downloaded episode {current_episode}!")
