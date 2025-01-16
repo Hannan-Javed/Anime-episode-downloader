@@ -51,32 +51,17 @@ def loading_animation(message, stop_event):
             time.sleep(0.5)
     print()
 
-def with_loading_animation(message: Union[str, Callable[..., str]]):
-    """
-    Decorator to display a loading animation while the decorated function is running.
-    
-    Args:
-        message (str or callable): The message to display. If callable, it should accept the same
-                                   arguments as the decorated function and return a string.
-    
-    Returns:
-        function: The decorated function.
-    """
+def with_loading_animation(message):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            if callable(message):
-                message_ = message(*args, **kwargs)
-            else:
-                message_ = message
             stop_event = threading.Event()
-            animation_thread = threading.Thread(target=loading_animation, args=(message_, stop_event), daemon=True)
+            animation_thread = threading.Thread(target=loading_animation, args=(message, stop_event), daemon=True)
             animation_thread.start()
             try:
-                result = func(*args, **kwargs)
+                return func(*args, **kwargs)
             finally:
                 stop_event.set()
                 animation_thread.join()
-            return result
-        return wrapper
+        return wrapper  
     return decorator
