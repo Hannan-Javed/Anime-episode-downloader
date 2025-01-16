@@ -108,6 +108,10 @@ def download_episodes(url, episode_list):
 
     chrome_options = ChromeOptions()
     chrome_options.add_experimental_option("prefs", prefs)
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     driver = Chrome(options=chrome_options)
     
     for current_episode in episode_list:
