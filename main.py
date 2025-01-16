@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
+from math import floor
 
 @with_loading_animation("Fetching Results")
 def fetch_results(anime_name, page=1):
@@ -55,21 +56,27 @@ def download_episode(driver, episode_number):
     files = os.listdir(current_download_directory)
     if ".crdownload" not in "".join(files):
         return False  # Episode did not start downloading
-
-    driver.get("chrome://downloads/")
-    spinner = ['|', '/', '-', '\\']
-    spinner_index = 0
     
     print(f"Downloading episode {episode_number}")
-    total_time = 0
-    progress = 0
-    while ".crdownload" in "".join(files):
-        new_progress = driver.execute_script("return document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector('cr-progress').value")
-        if progress != new_progress:
-            progress = new_progress
+    file_name = next(f for f in files if f.endswith(".crdownload"))
 
-        sys.stdout.write(f"\rProgress: {progress}% {spinner[spinner_index]}")
+    driver.get("chrome://downloads/")
+    progress = driver.execute_script("return document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector('cr-progress').value")
+    while progress == 0:
+        progress = driver.execute_script("return document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector('cr-progress').value")
+    
+    file_size = floor(os.path.getsize(os.path.join(current_download_directory, file_name)) * 100 / progress / 1024 / 1024)
+
+    spinner = ['|', '/', '-', '\\']
+    spinner_index = 0
+    total_time = 0
+    while ".crdownload" in "".join(files):
+        progress_size = os.path.getsize(os.path.join(current_download_directory, file_name)) / 1024 / 1024
+        progress = progress_size * 100 / file_size
+
+        sys.stdout.write(f"\r{progress:.2f}% downloaded, {progress_size:.2f}MB/{file_size}MB {spinner[spinner_index]}")
         sys.stdout.flush()
+
         spinner_index = (spinner_index + 1) % len(spinner)
 
         total_time += 0.1
