@@ -166,21 +166,40 @@ if __name__ == "__main__":
         ])
 
         if download_option.startswith('All'):
-            download_episodes(url, list(range(1, 10000)))
+            download_episodes(url, list(range(1, int(range) + 1)))
         elif download_option.startswith('m,n,o'):
             episodes = input("Enter the episode numbers separated by commas: ")
-            episodes_list = list(map(int, episodes.split(',')))
-            download_episodes(url, episodes_list)
+            episodes = list(map(int, episodes.split(',')))
+            while any(episode > int(range) for episode in episodes):
+                print(f"Invalid episode number! The final episode number is {range}.")
+                episodes = input("Enter the episode numbers separated by commas: ")
+                episodes = list(map(int, episodes.split(',')))
+            download_episodes(url, episodes)
         elif download_option.startswith('m,n'):
             m = int(input("Enter the starting episode number (m): "))
-            n = int(input("Enter the ending episode number (n): "))
-            episodes_list = list(range(m, n + 1)) if n != -1 else list(range(m, 10000))
-            download_episodes(url, episodes_list)
+            while m > int(range):
+                print(f"Invalid episode number! The final episode number is {range}.")
+                m = int(input("Enter the starting episode number (m): "))
+            if m == int(range):
+                download_episodes(url, [m])
+                continue
+            else:
+                n = int(input("Enter the ending episode number (n): "))
+                while n > int(range):
+                    print(f"Invalid episode number! The final episode number is {range}.")
+                    n = int(input("Enter the ending episode number (n): "))
+                download_episodes(url, list(range(m, n + 1)))
         elif download_option.startswith('m,-1'):
             m = int(input("Enter the starting episode number (m): "))
-            download_episodes(url, list(range(m, 10000)))
+            while m > int(range):
+                print(f"Invalid episode number! The final episode number is {range}.")
+                m = int(input("Enter the starting episode number (m): "))
+            download_episodes(url, list(range(m, int(range) + 1)))
         elif download_option.startswith('m'):
             m = int(input("Enter the episode number (m): "))
+            while m > int(range):
+                print(f"Invalid episode number! The final episode number is {range}.")
+                m = int(input("Enter the episode number (m): "))
             download_episodes(url, [m])
         elif download_option.startswith('1'):
             download_episodes(url, [1])
