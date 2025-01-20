@@ -33,7 +33,7 @@ def track_download(download_directory, file_path, file_size):
         progress_size = os.path.getsize(file_path) / 1024 / 1024
         progress = progress_size * 100 / file_size
 
-        sys.stdout.write(f"\r{progress:.2f}% downloaded, {progress_size:.2f}MB/{file_size:.2f}MB {spinner[spinner_index]}")
+        sys.stdout.write(f"\r{progress:.1f}% downloaded, {progress_size:.2f}MB/{file_size:.2f}MB {spinner[spinner_index]}")
         sys.stdout.flush()
 
         spinner_index = (spinner_index + 1) % len(spinner)
