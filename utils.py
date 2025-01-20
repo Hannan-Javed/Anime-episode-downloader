@@ -1,7 +1,6 @@
-import os, threading, sys, time
+import os, threading, sys, time, requests
 from PyInquirer import prompt
 from functools import wraps
-from typing import Callable, Union
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
@@ -17,6 +16,14 @@ def get_default_download_directory():
     return download_directory
 
 from config import DOWNLOAD_DIRECTORY
+
+def get_file_size(url):
+        response = requests.head(url, allow_redirects=True)
+        content_length = response.headers.get('Content-Length')
+        print(content_length)
+        if content_length is None:
+            return 0.0
+        return float(content_length) / (1024 * 1024)  # Convert bytes to MB
 
 def list_menu_selector(qprompt, anime_list):
     menu = prompt(
