@@ -1,6 +1,7 @@
 import os, threading, sys, time, requests
 from PyInquirer import prompt
 from functools import wraps
+from typing import Callable
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
@@ -23,26 +24,6 @@ def get_file_size(url):
         if content_length is None:
             return 0.0
         return float(content_length) / (1024 * 1024)  # Convert bytes to MB
-
-def track_download(download_directory, file_path, file_size):   
-    spinner = ['|', '/', '-', '\\']
-    spinner_index = 0
-    total_time = 0
-    files = os.listdir(download_directory)
-    while ".crdownload" in "".join(files):
-        progress_size = os.path.getsize(file_path) / 1024 / 1024
-        progress = progress_size * 100 / file_size
-
-        sys.stdout.write(f"\r{progress:.1f}% downloaded, {progress_size:.2f}MB/{file_size:.2f}MB {spinner[spinner_index]}")
-        sys.stdout.flush()
-
-        spinner_index = (spinner_index + 1) % len(spinner)
-
-        total_time += 0.1
-        time.sleep(0.1)
-
-        files = os.listdir(download_directory)
-    print()
 
 def list_menu_selector(qprompt, anime_list):
     menu = prompt(
@@ -67,28 +48,46 @@ def clear_undownloaded_files(download_directory):
             file_path = os.path.join(download_directory, file_name)
             os.remove(file_path)
 
-def loading_animation(message, stop_event):
+def loading_animation(message_func: Callable[[], str], stop_event: threading.Event):
     spinner = ['|', '/', '-', '\\']
     spinner_index = 0
     while not stop_event.is_set():
+        message = message_func()
         sys.stdout.write(f"\r{message} {spinner[spinner_index]}")
         sys.stdout.flush()
         spinner_index = (spinner_index + 1) % len(spinner)
         time.sleep(0.1)
-    sys.stdout.write("\r" + " " * (len(message) + 2) + "\r")
+    sys.stdout.write("\r" + " " * (len(message_func()) + 2) + "\r")
     sys.stdout.flush()
 
-def with_loading_animation(message):
+def with_loading_animation(message_func: Callable[[], str]):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             stop_event = threading.Event()
-            animation_thread = threading.Thread(target=loading_animation, args=(message, stop_event), daemon=True)
+            animation_thread = threading.Thread(target=loading_animation, args=(message_func, stop_event), daemon=True)
             animation_thread.start()
             try:
                 return func(*args, **kwargs)
             finally:
                 stop_event.set()
                 animation_thread.join()
-        return wrapper  
+        return wrapper
     return decorator
+
+global progress_data
+progress_data = {'progress': 0.0, 'progress_size': 0.0, 'file_size': 0.0}
+@with_loading_animation(lambda: f"{progress_data['progress']:.1f}% downloaded, {progress_data['progress_size']:.2f}MB/{progress_data['file_size']:.2f}MB")
+def track_download(download_directory, file_path, file_size):
+    progress_data['file_size'] = file_size
+    total_time = 0
+    files = os.listdir(download_directory)
+    while ".crdownload" in "".join(files):
+        progress_data['progress_size'] = os.path.getsize(file_path) / 1024 / 1024
+        progress_data['progress'] = progress_data['progress_size'] * 100 / file_size
+
+        total_time += 0.1
+        time.sleep(0.1)
+
+        files = os.listdir(download_directory)
+    print()
