@@ -24,6 +24,26 @@ def get_file_size(url):
             return 0.0
         return float(content_length) / (1024 * 1024)  # Convert bytes to MB
 
+def track_download(download_directory, file_path, file_size):   
+    spinner = ['|', '/', '-', '\\']
+    spinner_index = 0
+    total_time = 0
+    files = os.listdir(download_directory)
+    while ".crdownload" in "".join(files):
+        progress_size = os.path.getsize(file_path) / 1024 / 1024
+        progress = progress_size * 100 / file_size
+
+        sys.stdout.write(f"\r{progress:.2f}% downloaded, {progress_size:.2f}MB/{file_size:.2f}MB {spinner[spinner_index]}")
+        sys.stdout.flush()
+
+        spinner_index = (spinner_index + 1) % len(spinner)
+
+        total_time += 0.1
+        time.sleep(0.1)
+
+        files = os.listdir(download_directory)
+    print()
+
 def list_menu_selector(qprompt, anime_list):
     menu = prompt(
             [
