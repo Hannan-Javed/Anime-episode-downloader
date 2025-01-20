@@ -68,14 +68,15 @@ def clear_undownloaded_files(download_directory):
             os.remove(file_path)
 
 def loading_animation(message, stop_event):
+    spinner = ['|', '/', '-', '\\']
+    spinner_index = 0
     while not stop_event.is_set():
-        for dots in range(4):  # 0 to 3 dots
-            sys.stdout.write("\r" + message + " " * 4) # clear previous dots
-            sys.stdout.flush()
-            sys.stdout.write("\r" + message + "." * dots)
-            sys.stdout.flush()
-            time.sleep(0.5)
-    print()
+        sys.stdout.write(f"\r{message} {spinner[spinner_index]}")
+        sys.stdout.flush()
+        spinner_index = (spinner_index + 1) % len(spinner)
+        time.sleep(0.1)
+    sys.stdout.write("\r" + " " * (len(message) + 2) + "\r")
+    sys.stdout.flush()
 
 def with_loading_animation(message):
     def decorator(func):
