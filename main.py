@@ -6,7 +6,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from utils import get_file_size, list_menu_selector, track_download, with_loading_animation, clear_undownloaded_files
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
-from math import floor
 
 @with_loading_animation("Fetching Results")
 def fetch_results(anime_name, page=1):
