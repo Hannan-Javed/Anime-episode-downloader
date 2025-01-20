@@ -1,4 +1,4 @@
-import requests, re, time, os, sys
+import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
