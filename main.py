@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from utils import list_menu_selector, with_loading_animation, clear_undownloaded_files
+from utils import get_file_size, list_menu_selector, with_loading_animation, clear_undownloaded_files
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 from math import floor
 
@@ -52,7 +52,7 @@ def get_anime():
     url = next(a['href'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
 
-def download_episode(driver, episode_number):
+def download_episode(driver, episode_number, file_size):
     files = os.listdir(current_download_directory)
     if ".crdownload" not in "".join(files):
         return False  # Episode did not start downloading
@@ -61,11 +61,6 @@ def download_episode(driver, episode_number):
     file_name = next(f for f in files if f.endswith(".crdownload"))
 
     driver.get("chrome://downloads/")
-    progress = driver.execute_script("return document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector('cr-progress').value")
-    while progress == 0:
-        progress = driver.execute_script("return document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector('cr-progress').value")
-    
-    file_size = floor(os.path.getsize(os.path.join(current_download_directory, file_name)) * 100 / progress / 1024 / 1024)
 
     spinner = ['|', '/', '-', '\\']
     spinner_index = 0
@@ -140,10 +135,11 @@ def download_episodes(url, episode_list):
             download_link_tag = link_div.find('a')
             if download_link_tag and 'href' in download_link_tag.attrs:
                 download_link = download_link_tag['href']
+                file_size = get_file_size(download_link)
                 download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
                 driver.execute_script("arguments[0].click();", download_element)
                 time.sleep(2)
-                successful = download_episode(driver, current_episode)
+                successful = download_episode(driver, current_episode, file_size)
                 if successful:
                     break
                 else:
