@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from utils import get_file_size, list_menu_selector, with_loading_animation, clear_undownloaded_files
+from utils import get_file_size, list_menu_selector, track_download, with_loading_animation, clear_undownloaded_files
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 from math import floor
 
@@ -52,33 +52,39 @@ def get_anime():
     url = next(a['href'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
 
-def download_episode(driver, episode_number, file_size):
-    files = os.listdir(current_download_directory)
-    if ".crdownload" not in "".join(files):
-        return False  # Episode did not start downloading
-    
-    print(f"Downloading episode {episode_number}")
-    file_name = next(f for f in files if f.endswith(".crdownload"))
+def download_episode(driver, download_page_link, episode_number):
 
-    driver.get("chrome://downloads/")
+    driver.get(download_page_link)
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    link_download_section = soup.find('div', class_='mirror_link')
+    links = link_download_section.find_all('div')
 
-    spinner = ['|', '/', '-', '\\']
-    spinner_index = 0
-    total_time = 0
-    while ".crdownload" in "".join(files):
-        progress_size = os.path.getsize(os.path.join(current_download_directory, file_name)) / 1024 / 1024
-        progress = progress_size * 100 / file_size
-
-        sys.stdout.write(f"\r{progress:.2f}% downloaded, {progress_size:.2f}MB/{file_size}MB {spinner[spinner_index]}")
-        sys.stdout.flush()
-
-        spinner_index = (spinner_index + 1) % len(spinner)
-
-        total_time += 0.1
-        time.sleep(0.1)
-
-        files = os.listdir(current_download_directory)
-    return True
+    for link_div in reversed(links):
+            clear_undownloaded_files(current_download_directory)
+            download_link_tag = link_div.find('a')
+            if download_link_tag and 'href' in download_link_tag.attrs:
+                download_link = download_link_tag['href']
+                download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
+                driver.execute_script("arguments[0].click();", download_element)
+                time.sleep(2)
+                files = os.listdir(current_download_directory)
+                # download did not start
+                if ".crdownload" not in "".join(files):
+                    print(f"Retrying download with another link for episode {episode_number}...")
+                    if len(driver.window_handles) == 2:
+                            driver.switch_to.window(driver.window_handles[1])
+                            driver.close()
+                            driver.switch_to.window(driver.window_handles[0])
+                    driver.get(download_page_link)
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+                    continue
+                file_size = get_file_size(download_link)
+                file_path = os.path.join(current_download_directory, next(f for f in files if f.endswith(".crdownload")))
+                print(f"Downloading episode {episode_number}")
+                track_download(current_download_directory, file_path, file_size)
+                return True
+    return False
 
 def download_episodes(url, episode_list):
     response = requests.get(f"{url}{episode_list[0]}")
@@ -120,36 +126,11 @@ def download_episodes(url, episode_list):
         except IndexError:
             print("No more episodes to download!")
             break
+
         download_page_link = f"{BASE_URL}/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
-        driver.get(download_page_link)
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
-
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        link_download_section = soup.find('div', class_='mirror_link')
-        links = link_download_section.find_all('div')
-
-        successful = False
-        for link_div in reversed(links):
-            clear_undownloaded_files(current_download_directory)
-            download_link_tag = link_div.find('a')
-            if download_link_tag and 'href' in download_link_tag.attrs:
-                download_link = download_link_tag['href']
-                file_size = get_file_size(download_link)
-                download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
-                driver.execute_script("arguments[0].click();", download_element)
-                time.sleep(2)
-                successful = download_episode(driver, current_episode, file_size)
-                if successful:
-                    break
-                else:
-                    if len(driver.window_handles) == 2:
-                        driver.switch_to.window(driver.window_handles[1])
-                        driver.close()
-                        driver.switch_to.window(driver.window_handles[0])
-                    driver.get(download_page_link)
-                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
-                    print(f"Retrying download with another link for episode {current_episode}...")
+        successful = download_episode(driver, download_page_link, current_episode)
+        
         if successful:
             print(f"Successfully downloaded episode {current_episode}!")
         else:
