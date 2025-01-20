@@ -25,9 +25,11 @@ def fetch_results(anime_name, page=1):
             if link:
                 href = link['href']
                 name = link.find('div', class_='name').text.strip()
-                name = ' '.join(name.split()[:-2])  # Remove "episode xx"
+                name = name.split()
+                final_episode_number = name[-1]
+                name = ' '.join(name[:-2])  # Remove "episode xx"
                 if "(Dub)" not in name[len(name) - 5:]:
-                    anime_data.append({'name': name, 'href': href})
+                    anime_data.append({'name': name, 'href': href, 'range': final_episode_number})
         # Check for pagination
         pagination = soup.find('ul', class_='pagination')
         if not pagination or not pagination.find('li', class_='next'):
@@ -49,7 +51,8 @@ def get_anime():
     
     anime = list_menu_selector("Select the anime you want to download:", [a['name'] for a in anime_list])
     url = next(a['href'] for a in anime_list if a['name'] == anime)
-    return anime, url.rstrip(re.findall("[0-9]+", url)[-1])
+    range = next(a['range'] for a in anime_list if a['name'] == anime)
+    return anime, url.rstrip(re.findall("[0-9]+", url)[-1]), range
 
 def download_episode(driver, download_page_link, episode_number):
 
@@ -144,13 +147,14 @@ if __name__ == "__main__":
     continue_download = True
 
     while continue_download:
-        anime_name, url = get_anime()
+        anime_name, url, range = get_anime()
         url = f"{BASE_URL}/{url}"
         if any(char in anime_name for char in INVALID_FILENAME_CHARS):
             for char in INVALID_FILENAME_CHARS:
                 anime_name = anime_name.replace(char, '')
         os.makedirs(os.path.join(DOWNLOAD_DIRECTORY, anime_name), exist_ok=True)
         current_download_directory = os.path.join(DOWNLOAD_DIRECTORY, anime_name)
+        print(f"Range of episodes: 1 - {range}")
         
         download_option = list_menu_selector("Select the number of episodes you want to download:", [
             'All - From episode 1 until final episode',
