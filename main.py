@@ -125,11 +125,8 @@ def download_episodes(url, episode_list):
             soup = BeautifulSoup(response.text, 'html.parser')
             videosource_link = soup.find_all('iframe')
     
-        try:
-            episode_id = re.findall("id=[0-9A-Za-z]*", str(videosource_link[0]))[0]
-        except IndexError:
-            print("No more episodes to download!")
-            break
+        
+        episode_id = re.findall("id=[0-9A-Za-z]*", str(videosource_link[0]))[0]
 
         download_page_link = f"{BASE_URL}/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
