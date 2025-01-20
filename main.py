@@ -80,7 +80,9 @@ def download_episode(driver, download_page_link, episode_number):
                     continue
                 file_size = get_file_size(download_link)
                 file_path = os.path.join(current_download_directory, next(f for f in files if f.endswith(".crdownload")))
-                print(f"Downloading episode {episode_number}")
+                quality_match = re.search(r'\d{3,4}P', download_link_tag.text[11:].strip())
+                quality = quality_match.group(0) if quality_match else "Unknown"
+                print(f"Downloading episode {episode_number}, Quality: {quality}")
                 track_download(current_download_directory, file_path, file_size)
                 return True
     return False
