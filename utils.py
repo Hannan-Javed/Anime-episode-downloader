@@ -135,12 +135,12 @@ def loading_animation(message_func: Callable[[], str], stop_event: threading.Eve
     spinner = ['|', '/', '-', '\\']
     spinner_index = 0
     while not stop_event.is_set():
-        resume_event.wait()
         message = message_func()
         sys.stdout.write(f"\r{message} {spinner[spinner_index]}")
         sys.stdout.flush()
         spinner_index = (spinner_index + 1) % len(spinner)
         time.sleep(0.1)
+        resume_event.wait()
     sys.stdout.write("\r" + " " * (len(message_func()) + 2) + "\r")
     sys.stdout.flush()
 
