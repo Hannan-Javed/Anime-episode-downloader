@@ -66,13 +66,29 @@ def with_loading_animation(message_func: Callable[[], str]):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            stop_event = threading.Event()
-            animation_thread = threading.Thread(target=loading_animation, args=(message_func, stop_event), daemon=True)
+            # Inspect the function's signature
+            sig = inspect.signature(func)
+            parameters = sig.parameters
+            if 'stop_event' in parameters:
+                stop_event = kwargs.get('stop_event')
+            else:
+                stop_event = threading.Event()
+            if 'resume_event' in parameters:
+                resume_event = kwargs.get('resume_event')
+            else:
+                stop_event = threading.Event()
+                resume_event = threading.Event()
+            animation_thread = threading.Thread(
+                target=loading_animation, 
+                args=(message_func, stop_event, resume_event), 
+                daemon=True
+            )
             animation_thread.start()
             try:
                 return func(*args, **kwargs)
             finally:
                 stop_event.set()
+                resume_event.set()
                 animation_thread.join()
         return wrapper
     return decorator
