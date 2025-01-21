@@ -63,7 +63,6 @@ def download_episode(driver, download_page_link, episode_number):
     links = link_download_section.find_all('div')
 
     for link_div in reversed(links):
-            print(links)
             clear_undownloaded_files(current_download_directory)
             download_link_tag = link_div.find('a')
             if download_link_tag and 'href' in download_link_tag.attrs:
