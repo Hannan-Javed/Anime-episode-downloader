@@ -76,7 +76,6 @@ def with_loading_animation(message_func: Callable[[], str]):
             if 'resume_event' in parameters:
                 resume_event = kwargs.get('resume_event')
             else:
-                stop_event = threading.Event()
                 resume_event = threading.Event()
             animation_thread = threading.Thread(
                 target=loading_animation, 
