@@ -5,6 +5,18 @@ from typing import Callable
 from selenium.webdriver import Chrome
 
 def get_default_download_directory():
+    """
+    Get the default download directory based on the operating system.
+
+    Supported operating systems:
+    - Linux
+    - macOS
+    - Windows
+
+    Returns:
+        str or None: The path to the default "Downloads" directory, or `None` if unsupported.
+
+    """
     home_directory = os.path.expanduser("~")  # Get user's home directory
     
     # Check the operating system to determine the download directory
@@ -20,26 +32,54 @@ def get_default_download_directory():
 from config import DOWNLOAD_DIRECTORY
 
 def get_file_size(url):
-        response = requests.head(url, allow_redirects=True)
-        content_length = response.headers.get('Content-Length')
-        if content_length is None:
-            return 0.0
-        return float(content_length) / (1024 * 1024)  # Convert bytes to MB
+    """
+    Get the file size of a URL by sending a HEAD request.
 
-def list_menu_selector(qprompt, anime_list):
+    Args:
+        url (str): The URL of the file.
+    
+    Returns:
+        float: The file size in MB.
+    
+    """
+    response = requests.head(url, allow_redirects=True)
+    content_length = response.headers.get('Content-Length')
+    if content_length is None:
+        return 0.0
+    return float(content_length) / (1024 * 1024)  # Convert bytes to MB
+
+def list_menu_selector(qprompt, list_items):
+    """
+    Display a list menu and prompt the user to select an item.
+
+    Args:
+        qprompt (str): The question prompt to display.
+        list_items (list): The list of items to display in the menu.
+    
+    Returns:
+        str: The selected item.
+    
+    """
     menu = prompt(
             [
                 {
                     'type': 'list',
                     'name': 'name',
                     'message': qprompt,
-                    'choices': anime_list,
+                    'choices': list_items,
                 }
             ]
         )
     return menu['name']
         
 def clear_undownloaded_files(download_directory):
+    """
+    Clear all the undownloaded files in the download directory.
+
+    Args:
+        download_directory (str): The path to the download directory.
+    
+    """
     # get all the files
     file_list = os.listdir(download_directory)
 
@@ -50,6 +90,15 @@ def clear_undownloaded_files(download_directory):
             os.remove(file_path)
 
 def loading_animation(message_func: Callable[[], str], stop_event: threading.Event, resume_event: threading.Event):
+    """
+    Display a loading animation while waiting for an event to be set.
+    
+    Args:
+        message_func (Callable[[], str]): A function that returns the message to display.
+        stop_event (threading.Event): An event to stop the animation.
+        resume_event (threading.Event): An event to pause the animation.
+
+    """
     spinner = ['|', '/', '-', '\\']
     spinner_index = 0
     while not stop_event.is_set():
@@ -63,6 +112,16 @@ def loading_animation(message_func: Callable[[], str], stop_event: threading.Eve
     sys.stdout.flush()
 
 def with_loading_animation(message_func: Callable[[], str]):
+    """
+    Decorator to display a loading animation while executing a function.
+
+    Args:
+        message_func (Callable[[], str]): A function that returns the message to display.
+
+    Returns:
+        Callable: The decorated function.
+    
+    """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -97,6 +156,18 @@ global progress_data
 progress_data = {'progress': 0.0, 'progress_size': 0.0, 'file_size': 0.0}
 @with_loading_animation(lambda: f"{progress_data['progress']:.1f}% downloaded, {progress_data['progress_size']:.2f}MB/{progress_data['file_size']:.2f}MB")
 def track_download(download_directory, file_path, file_size, stop_event, download_completed_event, resume_event):
+    """
+    Track the download progress of a file in the download directory.
+
+    Args:
+        download_directory (str): The directory where downloads are saved.
+        file_path (str): The path to the downloading file.
+        file_size (float): The expected final size of the file being downloaded in MB.
+        stop_event (threading.Event): An event to stop the download tracking.
+        download_completed_event (threading.Event): An event to signal the download completion.
+        resume_event (threading.Event): An event to pause the download tracking.
+
+    """
     progress_data['file_size'] = file_size
     total_time = 0
     files = os.listdir(download_directory)
@@ -116,13 +187,27 @@ def track_download(download_directory, file_path, file_size, stop_event, downloa
     print()
 
 def manage_download(driver: Chrome, download_directory, file_path, file_size, last_link):
- 
+    """
+    Manages the download process by starting the download tracking thread and input monitoring thread.
+    
+    Args:
+        driver (Chrome): The Selenium WebDriver instance.
+        download_directory (str): The directory where downloads are saved.
+        file_path (str): The path to the downloading file.
+        file_size (float): The expected final size of the file being downloaded in MB.
+
+    Returns:
+        bool: True if download completed successfully, False if skipped.
+    """
     stop_event = threading.Event()
     resume_event = threading.Event()
     download_completed = threading.Event()
 
     resume_event.set()
     def monitor_input():
+        """
+        Monitor the keyboard input to pause the download and prompt the user for confirmation.
+        """
         while not stop_event.is_set() and not download_completed.is_set():
             if msvcrt.kbhit():
                 msvcrt.getch()  # Consume the key press
@@ -135,6 +220,12 @@ def manage_download(driver: Chrome, download_directory, file_path, file_size, la
                 driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='pause-or-resume']\").click()")
 
                 def ask_confirmation(q_result):
+                    """
+                    Prompt the user for confirmation to continue or cancel the download.
+                    
+                    Args:
+                        q_result (list): A list to store the user's response.
+                    """
                     if last_link:
                         sys.stdout.write("\nThis is the lowest quality available. Skipping it will skip this episode. Do you want to continue? (y/n): ")
                     else:

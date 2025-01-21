@@ -11,6 +11,16 @@ from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_
 
 @with_loading_animation(lambda: "Fetching Results")
 def fetch_results(anime_name, page=1):
+    """
+    Fetches the search results for the given anime name
+    
+    Args:
+        anime_name (str): The name of the anime to search for
+        page (int): The page number to start fetching results from. By default, it starts from page 1
+
+    Returns:
+        list: A list of dictionaries containing the anime name, href and the final episode number
+    """
     anime_data = []
     while True:
         base_url = f"{BASE_URL}/search.html?keyword={anime_name}&page={page}"
@@ -41,6 +51,12 @@ def fetch_results(anime_name, page=1):
     return anime_data
 
 def get_anime():
+    """
+    Fetches the anime name and the final episode number from the user
+
+    Returns:
+        tuple: A tuple containing the anime name, the url and the final episode number
+    """
     anime_name = input("Enter the name of the anime you want to download: ")
 
     anime_list = fetch_results(anime_name)
@@ -57,7 +73,17 @@ def get_anime():
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1]), range
 
 def download_episode(driver, download_page_link, episode_number):
+    """
+    Downloads the episode from the download page link
 
+    Args:
+        driver (WebDriver): The selenium webdriver instance
+        download_page_link (str): The download page link
+        episode_number (int): The episode number
+
+    Returns:
+        bool: True if the episode was downloaded successfully, False otherwise
+    """
     driver.get(download_page_link)
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -104,6 +130,15 @@ def download_episode(driver, download_page_link, episode_number):
     return False
 
 def download_episodes(url, episode_list):
+    """
+    Downloads the episodes from the episode list. Fetches title (and episode id) from the first episode in the list
+    and uses it for the rest of the episodes, since title is fixed. Then automatically downloads by finding id
+    of other episodes.
+
+    Args:
+        url (str): The base url of the anime
+        episode_list (list): The list of episodes to download
+    """
     response = requests.get(f"{url}{episode_list[0]}")
     soup = BeautifulSoup(response.text, 'html.parser')
     videosource_link = soup.find_all('iframe')
@@ -126,7 +161,7 @@ def download_episodes(url, episode_list):
 
     chrome_options = ChromeOptions()
     chrome_options.add_experimental_option("prefs", prefs)
-    #chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
