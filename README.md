@@ -20,6 +20,7 @@ Run `main.py`:
     - m,n,o..... - episode m, n, o, ....
 
 After entering, the download(s) will automatically start starting from the highest quality, and lowering down in case of error; error being the that specific **link does not work**.<br>
+You can manually skip that specific quality download and move to lower quality if it is taking too long. To do it, press any key while it is downloading, then press **y** within **10 seconds** when prompted. If you press any other key or 10 seconds pass, the download resumes downloading again.<br>
 You can change these configurations inside `config.py`:
 - `SUB` or `DUB`
 - Download folder. Use `get_default_download_directory()` to get the default location.
