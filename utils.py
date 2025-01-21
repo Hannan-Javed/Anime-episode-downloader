@@ -49,10 +49,11 @@ def clear_undownloaded_files(download_directory):
             file_path = os.path.join(download_directory, file_name)
             os.remove(file_path)
 
-def loading_animation(message_func: Callable[[], str], stop_event: threading.Event):
+def loading_animation(message_func: Callable[[], str], stop_event: threading.Event, resume_event: threading.Event):
     spinner = ['|', '/', '-', '\\']
     spinner_index = 0
     while not stop_event.is_set():
+        resume_event.wait()
         message = message_func()
         sys.stdout.write(f"\r{message} {spinner[spinner_index]}")
         sys.stdout.flush()
