@@ -2,6 +2,7 @@ import requests, re, time, os
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from utils import get_file_size, list_menu_selector, manage_download, with_loading_animation, clear_undownloaded_files
@@ -121,10 +122,11 @@ def download_episodes(url, episode_list):
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--enable-unsafe-swiftshader")
     chrome_options.add_argument("--log-level=3")
-    chrome_options.add_argument("--silent")
-    chrome_options.add_argument("--disable-logging")
-    driver = Chrome(options=chrome_options)
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    service = Service(log_path=os.devnull)
+    driver = Chrome(options=chrome_options, service=service)
     
     for current_episode in episode_list:
         if current_episode != episode_list[0]:
