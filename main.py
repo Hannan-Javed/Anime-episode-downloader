@@ -63,6 +63,7 @@ def download_episode(driver, download_page_link, episode_number):
     links = link_download_section.find_all('div')
 
     for link_div in reversed(links):
+            print(links)
             clear_undownloaded_files(current_download_directory)
             download_link_tag = link_div.find('a')
             if download_link_tag and 'href' in download_link_tag.attrs:
@@ -86,7 +87,7 @@ def download_episode(driver, download_page_link, episode_number):
                 quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
                 quality = quality_match.group(0) if quality_match else "Unknown"
                 print(f"Downloading episode {episode_number}, Quality: {quality}")
-                downloaded = manage_download(driver, current_download_directory, file_path, file_size)
+                downloaded = manage_download(driver, current_download_directory, file_path, file_size, True if link_div == links[0] else False)
                 if downloaded:
                     return True
                 else:
@@ -121,6 +122,9 @@ def download_episodes(url, episode_list):
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--log-level=3")
+    chrome_options.add_argument("--silent")
+    chrome_options.add_argument("--disable-logging")
     driver = Chrome(options=chrome_options)
     
     for current_episode in episode_list:

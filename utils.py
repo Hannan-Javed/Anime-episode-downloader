@@ -115,7 +115,7 @@ def track_download(download_directory, file_path, file_size, stop_event, downloa
         download_completed_event.set()
     print()
 
-def manage_download(driver: Chrome, download_directory, file_path, file_size):
+def manage_download(driver: Chrome, download_directory, file_path, file_size, last_link):
  
     stop_event = threading.Event()
     resume_event = threading.Event()
@@ -135,7 +135,10 @@ def manage_download(driver: Chrome, download_directory, file_path, file_size):
                 driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='pause-or-resume']\").click()")
 
                 def ask_confirmation(q_result):
-                    sys.stdout.write("\nDo you want to cancel the download? (y/n): ")
+                    if last_link:
+                        sys.stdout.write("\nThis is the lowest quality available. Skipping it will skip this episode. Do you want to continue? (y/n): ")
+                    else:
+                        sys.stdout.write("\nDo you want to cancel the download? (y/n): ")
                     sys.stdout.flush()
                     while True:
                         if msvcrt.kbhit():
