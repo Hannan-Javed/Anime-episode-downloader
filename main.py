@@ -5,6 +5,7 @@ from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from exceptions import InvalidLinkError
 from utils import get_file_size, list_menu_selector, manage_download, with_loading_animation, clear_undownloaded_files
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
@@ -69,19 +70,26 @@ def download_episode(driver, download_page_link, episode_number):
             if download_link_tag and 'href' in download_link_tag.attrs:
                 download_link = download_link_tag['href']
                 download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
-                driver.execute_script("arguments[0].click();", download_element)
-                time.sleep(2)
-                files = os.listdir(current_download_directory)
-                # download did not start
-                if ".crdownload" not in "".join(files):
-                    print(f"Retrying download with another link for episode {episode_number}...")
-                    if len(driver.window_handles) == 2:
-                            driver.switch_to.window(driver.window_handles[1])
-                            driver.close()
-                            driver.switch_to.window(driver.window_handles[0])
-                    driver.get(download_page_link)
-                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
-                    continue
+                try:
+                    driver.execute_script("arguments[0].click();", download_element)
+                    time.sleep(2)
+                    files = os.listdir(current_download_directory)
+                    # download did not start
+                    if ".crdownload" not in "".join(files):
+                        if len(driver.window_handles) == 2:
+                                driver.switch_to.window(driver.window_handles[1])
+                                driver.close()
+                                driver.switch_to.window(driver.window_handles[0])
+                        raise InvalidLinkError(f"Invalid download link for episode {episode_number}: {download_link}")
+                except InvalidLinkError as e:
+                    print(f"Error: {e}")
+                    if link_div != links[0]:
+                            print(f"Retrying download with another link...")
+                            driver.get(download_page_link)
+                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+                            continue
+                    else:
+                        return False
                 file_size = get_file_size(download_link)
                 file_path = os.path.join(current_download_directory, next(f for f in files if f.endswith(".crdownload")))
                 quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
@@ -118,7 +126,7 @@ def download_episodes(url, episode_list):
 
     chrome_options = ChromeOptions()
     chrome_options.add_experimental_option("prefs", prefs)
-    chrome_options.add_argument("--headless")
+    #chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
