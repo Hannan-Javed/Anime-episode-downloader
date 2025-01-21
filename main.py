@@ -72,7 +72,7 @@ def get_anime() -> tuple:
     range = next(a['range'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1]), range
 
-def download_episode(driver: str, download_page_link: str, episode_number: int) -> bool:
+def download_episode(driver: Chrome, download_page_link: str, episode_number: int) -> bool:
     """
     Downloads the episode from the download page link
 
