@@ -146,11 +146,7 @@ def download_episodes(url: str, episode_list: list):
         print(f"Cannot find download link for episode {episode_list[0]}!")
         return
 
-    try:
-        title = f"&{re.findall('title=[A-Za-z+]*', str(videosource_link[0]))[0]}"
-    except IndexError:
-        print("No such episode exists!")
-        return
+    title = f"&{re.findall('title=[A-Za-z+]*', str(videosource_link[0]))[0]}"
 
     driver = setup_driver(current_download_directory)
     
