@@ -1,7 +1,8 @@
-import os, threading, sys, time, requests
+import os, threading, sys, time, requests, msvcrt, inspect
 from PyInquirer import prompt
 from functools import wraps
 from typing import Callable
+from selenium.webdriver import Chrome
 
 def get_default_download_directory():
     home_directory = os.path.expanduser("~")  # Get user's home directory
