@@ -31,12 +31,12 @@ def get_default_download_directory():
 
 from config import DOWNLOAD_DIRECTORY
 
-def get_file_size(url):
+def get_file_size(url: str) -> float:
     """
     Get the file size of a URL by sending a HEAD request.
 
     Args:
-        url (str): The URL of the file.
+        url: The URL of the file.
     
     Returns:
         float: The file size in MB.
@@ -48,13 +48,13 @@ def get_file_size(url):
         return 0.0
     return float(content_length) / (1024 * 1024)  # Convert bytes to MB
 
-def list_menu_selector(qprompt, list_items):
+def list_menu_selector(qprompt: str, list_items: list) -> str:
     """
     Display a list menu and prompt the user to select an item.
 
     Args:
-        qprompt (str): The question prompt to display.
-        list_items (list): The list of items to display in the menu.
+        qprompt: The question prompt to display.
+        list_items: The list of items to display in the menu.
     
     Returns:
         str: The selected item.
@@ -72,12 +72,12 @@ def list_menu_selector(qprompt, list_items):
         )
     return menu['name']
         
-def clear_undownloaded_files(download_directory):
+def clear_undownloaded_files(download_directory: str):
     """
     Clear all the undownloaded files in the download directory.
 
     Args:
-        download_directory (str): The path to the download directory.
+        download_directory: The path to the download directory.
     
     """
     # get all the files
@@ -94,9 +94,9 @@ def loading_animation(message_func: Callable[[], str], stop_event: threading.Eve
     Display a loading animation while waiting for an event to be set.
     
     Args:
-        message_func (Callable[[], str]): A function that returns the message to display.
-        stop_event (threading.Event): An event to stop the animation.
-        resume_event (threading.Event): An event to pause the animation.
+        message_func: A function that returns the message to display.
+        stop_event: An event to stop the animation.
+        resume_event: An event to pause the animation.
 
     """
     spinner = ['|', '/', '-', '\\']
@@ -116,13 +116,13 @@ def with_loading_animation(message_func: Callable[[], str]):
     Decorator to display a loading animation while executing a function.
 
     Args:
-        message_func (Callable[[], str]): A function that returns the message to display.
+        message_func: A function that returns the message to display.
 
     Returns:
         Callable: The decorated function.
     
     """
-    def decorator(func):
+    def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Inspect the function's signature
@@ -155,17 +155,17 @@ def with_loading_animation(message_func: Callable[[], str]):
 global progress_data
 progress_data = {'progress': 0.0, 'progress_size': 0.0, 'file_size': 0.0}
 @with_loading_animation(lambda: f"{progress_data['progress']:.1f}% downloaded, {progress_data['progress_size']:.2f}MB/{progress_data['file_size']:.2f}MB")
-def track_download(download_directory, file_path, file_size, stop_event, download_completed_event, resume_event):
+def track_download(download_directory: str, file_path: str, file_size: float, stop_event: threading.Event, download_completed_event: threading.Event, resume_event: threading.Event):
     """
     Track the download progress of a file in the download directory.
 
     Args:
-        download_directory (str): The directory where downloads are saved.
-        file_path (str): The path to the downloading file.
-        file_size (float): The expected final size of the file being downloaded in MB.
-        stop_event (threading.Event): An event to stop the download tracking.
-        download_completed_event (threading.Event): An event to signal the download completion.
-        resume_event (threading.Event): An event to pause the download tracking.
+        download_directory: The directory where downloads are saved.
+        file_path: The path to the downloading file.
+        file_size: The expected final size of the file being downloaded in MB.
+        stop_event: An event to stop the download tracking.
+        download_completed_event: An event to signal the download completion.
+        resume_event: An event to pause the download tracking.
 
     """
     progress_data['file_size'] = file_size
@@ -186,15 +186,15 @@ def track_download(download_directory, file_path, file_size, stop_event, downloa
         download_completed_event.set()
     print()
 
-def manage_download(driver: Chrome, download_directory, file_path, file_size, last_link):
+def manage_download(driver: Chrome, download_directory: str, file_path: str, file_size: float, last_link: bool = False) -> bool:
     """
     Manages the download process by starting the download tracking thread and input monitoring thread.
     
     Args:
-        driver (Chrome): The Selenium WebDriver instance.
-        download_directory (str): The directory where downloads are saved.
-        file_path (str): The path to the downloading file.
-        file_size (float): The expected final size of the file being downloaded in MB.
+        driver: The Selenium WebDriver instance.
+        download_directory: The directory where downloads are saved.
+        file_path: The path to the downloading file.
+        file_size: The expected final size of the file being downloaded in MB.
 
     Returns:
         bool: True if download completed successfully, False if skipped.
@@ -219,12 +219,12 @@ def manage_download(driver: Chrome, download_directory, file_path, file_size, la
                 driver.get("chrome://downloads/")
                 driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='pause-or-resume']\").click()")
 
-                def ask_confirmation(q_result):
+                def ask_confirmation(q_result: list):
                     """
                     Prompt the user for confirmation to continue or cancel the download.
                     
                     Args:
-                        q_result (list): A list to store the user's response.
+                        q_result: A list to store the user's response.
                     """
                     if last_link:
                         sys.stdout.write("\nThis is the lowest quality available. Skipping it will skip this episode. Do you want to continue? (y/n): ")

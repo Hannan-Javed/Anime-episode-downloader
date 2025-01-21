@@ -10,13 +10,13 @@ from utils import get_file_size, list_menu_selector, manage_download, with_loadi
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
 @with_loading_animation(lambda: "Fetching Results")
-def fetch_results(anime_name, page=1):
+def fetch_results(anime_name: str, page: int = 1) -> list:
     """
     Fetches the search results for the given anime name
     
     Args:
-        anime_name (str): The name of the anime to search for
-        page (int): The page number to start fetching results from. By default, it starts from page 1
+        anime_name: The name of the anime to search for
+        page: The page number to start fetching results from. By default, it starts from page 1
 
     Returns:
         list: A list of dictionaries containing the anime name, href and the final episode number
@@ -50,7 +50,7 @@ def fetch_results(anime_name, page=1):
 
     return anime_data
 
-def get_anime():
+def get_anime() -> tuple:
     """
     Fetches the anime name and the final episode number from the user
 
@@ -72,14 +72,14 @@ def get_anime():
     range = next(a['range'] for a in anime_list if a['name'] == anime)
     return anime, url.rstrip(re.findall("[0-9]+", url)[-1]), range
 
-def download_episode(driver, download_page_link, episode_number):
+def download_episode(driver: str, download_page_link: str, episode_number: int) -> bool:
     """
     Downloads the episode from the download page link
 
     Args:
-        driver (WebDriver): The selenium webdriver instance
-        download_page_link (str): The download page link
-        episode_number (int): The episode number
+        driver: The selenium webdriver instance
+        download_page_link: The download page link
+        episode_number: The episode number
 
     Returns:
         bool: True if the episode was downloaded successfully, False otherwise
@@ -129,15 +129,15 @@ def download_episode(driver, download_page_link, episode_number):
                     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
     return False
 
-def download_episodes(url, episode_list):
+def download_episodes(url: str, episode_list: list):
     """
     Downloads the episodes from the episode list. Fetches title (and episode id) from the first episode in the list
     and uses it for the rest of the episodes, since title is fixed. Then automatically downloads by finding id
     of other episodes.
 
     Args:
-        url (str): The base url of the anime
-        episode_list (list): The list of episodes to download
+        url: The base url of the anime
+        episode_list: The list of episodes to download
     """
     response = requests.get(f"{url}{episode_list[0]}")
     soup = BeautifulSoup(response.text, 'html.parser')
