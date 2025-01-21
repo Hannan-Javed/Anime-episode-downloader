@@ -111,6 +111,8 @@ def track_download(download_directory, file_path, file_size, stop_event, downloa
         time.sleep(0.1)
 
         files = os.listdir(download_directory)
+    if ".crdownload" not in "".join(files):
+        download_completed_event.set()
     print()
 
 def manage_download(driver: Chrome, download_directory, file_path, file_size):
