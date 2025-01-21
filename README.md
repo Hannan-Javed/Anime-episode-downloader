@@ -18,7 +18,6 @@ Run `main.py`:
     - m,n - From episode m to n (m <= n)
     - m,-1 - From episode m to final
     - m,n,o..... - episode m, n, o, ....
-    - 1 if its a movie
 
 After entering, the download(s) will automatically start starting from the highest quality, and lowering down in case of error; error being the that specific **link does not work**.<br>
 You can change these configurations inside `config.py`:
