@@ -96,11 +96,14 @@ def with_loading_animation(message_func: Callable[[], str]):
 global progress_data
 progress_data = {'progress': 0.0, 'progress_size': 0.0, 'file_size': 0.0}
 @with_loading_animation(lambda: f"{progress_data['progress']:.1f}% downloaded, {progress_data['progress_size']:.2f}MB/{progress_data['file_size']:.2f}MB")
-def track_download(download_directory, file_path, file_size):
+def track_download(download_directory, file_path, file_size, stop_event, download_completed_event, resume_event):
     progress_data['file_size'] = file_size
     total_time = 0
     files = os.listdir(download_directory)
     while ".crdownload" in "".join(files):
+        resume_event.wait() # Wait if resume_event is cleared
+        if stop_event.is_set():
+            break  # Exit if stop_event is set
         progress_data['progress_size'] = os.path.getsize(file_path) / 1024 / 1024
         progress_data['progress'] = progress_data['progress_size'] * 100 / file_size
 
