@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from utils import get_file_size, list_menu_selector, track_download, with_loading_animation, clear_undownloaded_files
+from utils import get_file_size, list_menu_selector, manage_download, with_loading_animation, clear_undownloaded_files
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
 @with_loading_animation(lambda: "Fetching Results")
@@ -86,8 +86,12 @@ def download_episode(driver, download_page_link, episode_number):
                 quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
                 quality = quality_match.group(0) if quality_match else "Unknown"
                 print(f"Downloading episode {episode_number}, Quality: {quality}")
-                track_download(current_download_directory, file_path, file_size)
-                return True
+                downloaded = manage_download(driver, current_download_directory, file_path, file_size)
+                if downloaded:
+                    return True
+                else:
+                    driver.get(download_page_link)
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
     return False
 
 def download_episodes(url, episode_list):
