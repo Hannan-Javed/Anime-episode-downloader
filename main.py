@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import Chrome
 from selenium.webdriver.support.ui import WebDriverWait
 from exceptions import InvalidLinkError
-from utils import setup_driver, get_file_size, list_menu_selector, manage_download, with_loading_animation, clear_undownloaded_files
+from utils import setup_driver, get_file_size, list_menu_selector, manage_download, with_loading_animation, clear_undownloaded_files,DownloadState
 from config import BASE_URL, DOWNLOAD_DIRECTORY, EPISODE_TYPE, INVALID_FILENAME_CHARS
 
 @with_loading_animation(lambda: "Fetching Results")
@@ -120,13 +120,12 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                 quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
                 quality = quality_match.group(0) if quality_match else "Unknown"
                 print(f"Downloading episode {episode_number}, Quality: {quality}")
-                downloaded = manage_download(driver, current_download_directory, file_path, file_size, True if link_div == links[0] else False)
-                if downloaded:
-                    return True
-                else:
+                download_state = manage_download(driver, current_download_directory, file_path, file_size, True if link_div == links[0] else False)
+                if download_state == DownloadState.SKIPPED:
                     driver.get(download_page_link)
                     WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
-    return False
+                else:
+                    return download_state
 
 def download_episodes(url: str, episode_list: list):
     """
@@ -163,9 +162,9 @@ def download_episodes(url: str, episode_list: list):
 
         successful = download_episode(driver, download_page_link, current_episode)
         
-        if successful:
+        if successful == DownloadState.SUCCESSFUL:
             print(f"Successfully downloaded episode {current_episode}!")
-        else:
+        elif successful == DownloadState.FAILED:
             print(f"Error! Cannot download episode {current_episode}")
         
     driver.quit()

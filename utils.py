@@ -5,6 +5,12 @@ from typing import Callable
 from selenium.webdriver import Chrome
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
+from enum import Enum
+class DownloadState(Enum):
+    SUCCESS = "success"
+    SKIPPED = "skipped"
+    CANCELLED = "cancelled"
+    FAILED = "failed"
 
 def setup_driver(download_directory: str) -> Chrome:
     """
@@ -237,7 +243,7 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
     download_completed = threading.Event()
 
     resume_event.set()
-    def monitor_input():
+    def monitor_input(q_result: list):
         """
         Monitor the keyboard input to pause the download and prompt the user for confirmation.
         """
@@ -252,26 +258,26 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                 driver.get("chrome://downloads/")
                 driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='pause-or-resume']\").click()")
 
-                def ask_confirmation(q_result: list):
+                def ask_confirmation():
                     """
-                    Prompt the user for confirmation to continue or cancel the download.
-                    
+                    Prompt the user for confirmation to skip or cancel the current episode.
+
                     Args:
-                        q_result: A list to store the user's response.
+                        q_result: A list to store the user's response ('s' or 'c').
                     """
                     if last_link:
-                        sys.stdout.write("\nThis is the lowest quality available. Skipping it will skip this episode. Do you want to continue? (y/n): ")
+                        sys.stdout.write("\nThis is the last quality. Pressing s or c will cancel the download.\n")
                     else:
-                        sys.stdout.write("\nDo you want to cancel the download? (y/n): ")
+                        sys.stdout.write("\nPress 's' to skip this quality or 'c' to cancel this episode: ")
                     sys.stdout.flush()
                     while True:
                         if msvcrt.kbhit():
                             key = msvcrt.getch().decode().lower()
-                            q_result.append(key == 'y')
-                            break
+                            if key in ('s', 'c'):
+                                q_result.append(key)
+                                break
 
-                q_result = []
-                prompt_thread = threading.Thread(target=ask_confirmation, args=(q_result,))
+                prompt_thread = threading.Thread(target=ask_confirmation)
                 prompt_thread.start()
                 prompt_thread.join(timeout=10)  # 10-second timeout
 
@@ -283,14 +289,21 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                     driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='pause-or-resume']\").click()")
                     continue
 
-                if q_result and q_result[0]:
-                    # Cancel the download using Selenium
-                    sys.stdout.write(f"\nCancelling download...\n")
-                    sys.stdout.flush()
+                if q_result:
                     driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='cancel']\").click()")
                     resume_event.set()
                     stop_event.set()
-                    return
+                    if q_result[0] == 's':
+                        # Skip the download using Selenium
+                        sys.stdout.write(f"\nCancelling download...\n") if last_link else sys.stdout.write(f"\nSkipping quality...\n")
+                        sys.stdout.flush()
+                        return q_result.append(DownloadState.SKIPPED)
+                    elif q_result[0] == 'c':
+                        # Cancel the download using Selenium
+                        sys.stdout.write(f"\nCancelling download...\n")
+                        sys.stdout.flush()
+                        return q_result.append(DownloadState.CANCELLED)
+
                 else:
                     # Resume the download
                     sys.stdout.write(f"\nResuming download...{" "*100}\n")
@@ -312,9 +325,9 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
         daemon=True
     )
     download_thread.start()
-
+    q_result = []
     # Start the input monitoring thread
-    input_thread = threading.Thread(target=monitor_input, daemon=True)
+    input_thread = threading.Thread(target=monitor_input, args=(q_result,), daemon=True)
     input_thread.start()
 
     # Wait for the download thread to complete
@@ -324,4 +337,6 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
     stop_event.set()
     resume_event.set()
     input_thread.join()
-    return download_completed.is_set()
+    if download_completed.is_set():
+        return DownloadState.SUCCESS
+    return q_result[-1] if q_result else DownloadState.FAILED
