@@ -324,7 +324,4 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
     stop_event.set()
     resume_event.set()
     input_thread.join()
-    
-    if not download_completed.is_set():
-        return False
-    return True
+    return download_completed.is_set()
