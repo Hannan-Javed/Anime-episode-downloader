@@ -162,7 +162,7 @@ def download_episodes(url: str, episode_list: list):
 
         successful = download_episode(driver, download_page_link, current_episode)
         
-        if successful == DownloadState.SUCCESSFUL:
+        if successful == DownloadState.SUCCESS:
             print(f"Successfully downloaded episode {current_episode}!")
         elif successful == DownloadState.FAILED:
             print(f"Error! Cannot download episode {current_episode}")
