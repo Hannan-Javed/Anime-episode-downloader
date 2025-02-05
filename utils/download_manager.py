@@ -38,7 +38,16 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
         bool: True if the episode was downloaded successfully, False otherwise
     """
     driver.get(download_page_link)
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
+    try:
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
+    except:
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        captcha_div = soup.select_one('div[id*="captcha"]')
+        if captcha_div:
+            print(f"captcha verification required. please visit {download_page_link} and authorate manually first, and run the program again")
+            input("Press any key to exit...")
+            driver.quit()
+            sys.exit(1)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     link_download_section = soup.find('div', class_='mirror_link')
     links = link_download_section.find_all('div')
