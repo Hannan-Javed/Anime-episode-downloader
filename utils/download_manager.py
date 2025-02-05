@@ -227,12 +227,12 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                     driver.execute_script("document.querySelector('downloads-manager').shadowRoot.querySelector('#downloadsList downloads-item').shadowRoot.querySelector(\"button[id='cancel']\").click()")
                     resume_event.set()
                     stop_event.set()
-                    if q_result[0] == 's':
+                    if q_result[-1] == 's':
                         # Skip the download using Selenium
                         sys.stdout.write(f"\nCancelling download...\n") if last_link else sys.stdout.write(f"\nSkipping quality...\n")
                         sys.stdout.flush()
                         q_result.append(DownloadState.SKIPPED)
-                    elif q_result[0] == 'c':
+                    elif q_result[-1] == 'c':
                         # Cancel the download using Selenium
                         sys.stdout.write(f"\nCancelling download...\n")
                         sys.stdout.flush()
