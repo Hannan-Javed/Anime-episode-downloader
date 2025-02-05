@@ -200,7 +200,7 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                         q_result: A list to store the user's response ('s' or 'c').
                     """
                     if last_link:
-                        sys.stdout.write("\nThis is the last quality. Pressing s or c will cancel the download.\n")
+                        sys.stdout.write("\nThis is the last quality. Pressing s or c will cancel the download: ")
                     else:
                         sys.stdout.write("\nPress 's' to skip this quality or 'c' to cancel this episode: ")
                     sys.stdout.flush()
