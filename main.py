@@ -69,7 +69,5 @@ if __name__ == "__main__":
                     print(f"Invalid episode number! The range is 1 - {episode_range}.")
                     m = int(input("Enter the episode number (m): "))
                 download_episodes(url, [m], current_download_directory)
-            elif download_option.startswith('1'):
-                download_episodes(url, [1], current_download_directory)
             
         continue_download = input("Do you want to download another anime? (y/n): ").lower() == 'y'
