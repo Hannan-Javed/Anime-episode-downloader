@@ -38,7 +38,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
         bool: True if the episode was downloaded successfully, False otherwise
     """
     driver.get(download_page_link)
-    WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     link_download_section = soup.find('div', class_='mirror_link')
     links = link_download_section.find_all('div')
@@ -65,7 +65,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                     if link_div != links[0]:
                             print(f"Retrying download with another link...")
                             driver.get(download_page_link)
-                            WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
                             continue
                     else:
                         return False
@@ -77,7 +77,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                 download_state = manage_download(driver, download_directory, file_path, file_size, True if link_div == links[0] else False)
                 if download_state == DownloadState.SKIPPED:
                     driver.get(download_page_link)
-                    WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
                 else:
                     return download_state
 
