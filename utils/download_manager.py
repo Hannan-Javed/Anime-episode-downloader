@@ -1,195 +1,129 @@
-import os, threading, sys, time, requests, msvcrt, inspect
-from PyInquirer import prompt
-from functools import wraps
-from typing import Callable
-from selenium.webdriver import Chrome
-from selenium.webdriver import Chrome, ChromeOptions
-from selenium.webdriver.chrome.service import Service
+import os
+import sys
+import time
+import re
+import threading
+import msvcrt
 from enum import Enum
+
+import requests
+from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from bs4 import BeautifulSoup
+
+from exceptions import InvalidLinkError
+from utils.file_utils import clear_undownloaded_files, get_file_size
+from utils.animation_utils import with_loading_animation
+from utils.driver_utils import setup_driver
+from config import BASE_URL, EPISODE_TYPE
+
 class DownloadState(Enum):
     SUCCESS = "success"
     SKIPPED = "skipped"
     CANCELLED = "cancelled"
     FAILED = "failed"
 
-def setup_driver(download_directory: str) -> Chrome:
+def download_episode(driver: Chrome, download_page_link: str, episode_number: int, download_directory: str) -> bool:
     """
-    Setup the Chrome WebDriver. Sets the download directory, headless mode, and surpresses
-    logging.
+    Downloads the episode from the download page link
 
     Args:
-        download_directory: The directory where downloads are saved.
+        driver: The selenium webdriver instance
+        download_page_link: The download page link
+        episode_number: The episode number
 
     Returns:
-        Chrome: The configured Chrome WebDriver instance.
-
+        bool: True if the episode was downloaded successfully, False otherwise
     """
-    prefs = {
-        "download.default_directory": download_directory,
-        "download.directory_upgrade": True,
-        "download.prompt_for_download": False,
-    }
+    driver.get(download_page_link)
+    WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    link_download_section = soup.find('div', class_='mirror_link')
+    links = link_download_section.find_all('div')
 
-    chrome_options = ChromeOptions()
-    chrome_options.add_experimental_option("prefs", prefs)
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--enable-unsafe-swiftshader")
-    chrome_options.add_argument("--log-level=3")
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    service = Service(log_path=os.devnull)
-    driver = Chrome(options=chrome_options, service=service)
-    return driver
+    for link_div in reversed(links):
+            clear_undownloaded_files(download_directory)
+            download_link_tag = link_div.find('a')
+            if download_link_tag and 'href' in download_link_tag.attrs:
+                download_link = download_link_tag['href']
+                download_element = driver.find_element(By.XPATH, f'//a[@href="{download_link}"]')
+                try:
+                    driver.execute_script("arguments[0].click();", download_element)
+                    time.sleep(2)
+                    files = os.listdir(download_directory)
+                    # download did not start
+                    if ".crdownload" not in "".join(files):
+                        if len(driver.window_handles) == 2:
+                                driver.switch_to.window(driver.window_handles[1])
+                                driver.close()
+                                driver.switch_to.window(driver.window_handles[0])
+                        raise InvalidLinkError(f"Invalid download link for episode {episode_number}: {download_link}")
+                except InvalidLinkError as e:
+                    print(f"Error: {e}")
+                    if link_div != links[0]:
+                            print(f"Retrying download with another link...")
+                            driver.get(download_page_link)
+                            WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+                            continue
+                    else:
+                        return False
+                file_size = get_file_size(download_link)
+                file_path = os.path.join(download_directory, next(f for f in files if f.endswith(".crdownload")))
+                quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
+                quality = quality_match.group(0) if quality_match else "Unknown"
+                print(f"Downloading episode {episode_number}, Quality: {quality}")
+                download_state = manage_download(driver, download_directory, file_path, file_size, True if link_div == links[0] else False)
+                if download_state == DownloadState.SKIPPED:
+                    driver.get(download_page_link)
+                    WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.CLASS_NAME, 'mirror_link')))
+                else:
+                    return download_state
 
-def get_default_download_directory():
+def download_episodes(url: str, episode_list: list, download_directory: str) -> None:
     """
-    Get the default download directory based on the operating system.
-
-    Supported operating systems:
-    - Linux
-    - macOS
-    - Windows
-
-    Returns:
-        str or None: The path to the default "Downloads" directory, or `None` if unsupported.
-
-    """
-    home_directory = os.path.expanduser("~")  # Get user's home directory
-    
-    # Check the operating system to determine the download directory
-    if os.name == 'posix':  # Linux or macOS
-        download_directory = os.path.join(home_directory, 'Downloads')
-    elif os.name == 'nt':  # Windows
-        download_directory = os.path.join(home_directory, 'Downloads')
-    else:
-        download_directory = None  # Unsupported operating system
-    
-    return download_directory
-
-from config import DOWNLOAD_DIRECTORY
-
-def get_file_size(url: str) -> float:
-    """
-    Get the file size of a URL by sending a HEAD request.
+    Downloads the episodes from the episode list. Fetches title (and episode id) from the first episode in the list
+    and uses it for the rest of the episodes, since title is fixed. Then automatically downloads by finding id
+    of other episodes.
 
     Args:
-        url: The URL of the file.
-    
-    Returns:
-        float: The file size in MB.
-    
+        url: The base url of the anime
+        episode_list: The list of episodes to download
     """
-    response = requests.head(url, allow_redirects=True)
-    content_length = response.headers.get('Content-Length')
-    if content_length is None:
-        return 0.0
-    return float(content_length) / (1024 * 1024)  # Convert bytes to MB
+    response = requests.get(f"{url}{episode_list[0]}")
+    soup = BeautifulSoup(response.text, 'html.parser')
+    videosource_link = soup.find_all('iframe')
 
-def list_menu_selector(qprompt: str, list_items: list) -> str:
-    """
-    Display a list menu and prompt the user to select an item.
+    if not videosource_link:
+        print(f"Cannot find download link for episode {episode_list[0]}!")
+        return
 
-    Args:
-        qprompt: The question prompt to display.
-        list_items: The list of items to display in the menu.
+    title = f"&{re.findall('title=[A-Za-z+]*', str(videosource_link[0]))[0]}"
+
+    driver = setup_driver(download_directory)
     
-    Returns:
-        str: The selected item.
+    for current_episode in episode_list:
+        if current_episode != episode_list[0]:
+            response = requests.get(f"{url}{current_episode}")
+            soup = BeautifulSoup(response.text, 'html.parser')
+            videosource_link = soup.find_all('iframe')
     
-    """
-    menu = prompt(
-            [
-                {
-                    'type': 'list',
-                    'name': 'name',
-                    'message': qprompt,
-                    'choices': list_items,
-                }
-            ]
-        )
-    return menu['name']
         
-def clear_undownloaded_files(download_directory: str):
-    """
-    Clear all the undownloaded files in the download directory.
+        episode_id = re.findall("id=[0-9A-Za-z]*", str(videosource_link[0]))[0]
 
-    Args:
-        download_directory: The path to the download directory.
-    
-    """
-    # get all the files
-    file_list = os.listdir(download_directory)
+        download_page_link = f"{BASE_URL}/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
-    # Iterate over the files and delete .crdownload files
-    for file_name in file_list:
-        if file_name.endswith(".crdownload"):
-            file_path = os.path.join(download_directory, file_name)
-            os.remove(file_path)
+        successful = download_episode(driver, download_page_link, current_episode, download_directory)
+        
+        if successful == DownloadState.SUCCESS:
+            print(f"Successfully downloaded episode {current_episode}!")
+        elif successful == DownloadState.FAILED:
+            print(f"Error! Cannot download episode {current_episode}")
+        
+    driver.quit()
+    print("All episodes downloaded!")
 
-def loading_animation(message_func: Callable[[], str], stop_event: threading.Event, resume_event: threading.Event):
-    """
-    Display a loading animation while waiting for an event to be set.
-    
-    Args:
-        message_func: A function that returns the message to display.
-        stop_event: An event to stop the animation.
-        resume_event: An event to pause the animation.
-
-    """
-    spinner = ['|', '/', '-', '\\']
-    spinner_index = 0
-    while not stop_event.is_set():
-        message = message_func()
-        sys.stdout.write(f"\r{message} {spinner[spinner_index]}")
-        sys.stdout.flush()
-        spinner_index = (spinner_index + 1) % len(spinner)
-        time.sleep(0.1)
-        resume_event.wait()
-    sys.stdout.write("\r" + " " * (len(message_func()) + 2) + "\r")
-    sys.stdout.flush()
-
-def with_loading_animation(message_func: Callable[[], str]):
-    """
-    Decorator to display a loading animation while executing a function.
-
-    Args:
-        message_func: A function that returns the message to display.
-
-    Returns:
-        Callable: The decorated function.
-    
-    """
-    def decorator(func: Callable):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Inspect the function's signature
-            sig = inspect.signature(func)
-            parameters = sig.parameters
-            if 'stop_event' in parameters:
-                stop_event = kwargs.get('stop_event')
-            else:
-                stop_event = threading.Event()
-            if 'resume_event' in parameters:
-                resume_event = kwargs.get('resume_event')
-            else:
-                resume_event = threading.Event()
-                resume_event.set()
-            animation_thread = threading.Thread(
-                target=loading_animation, 
-                args=(message_func, stop_event, resume_event), 
-                daemon=True
-            )
-            animation_thread.start()
-            try:
-                return func(*args, **kwargs)
-            finally:
-                stop_event.set()
-                resume_event.set()
-                animation_thread.join()
-        return wrapper
-    return decorator
 
 global progress_data
 progress_data = {'progress': 0.0, 'progress_size': 0.0, 'file_size': 0.0}
@@ -297,12 +231,13 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                         # Skip the download using Selenium
                         sys.stdout.write(f"\nCancelling download...\n") if last_link else sys.stdout.write(f"\nSkipping quality...\n")
                         sys.stdout.flush()
-                        return q_result.append(DownloadState.SKIPPED)
+                        q_result.append(DownloadState.SKIPPED)
                     elif q_result[0] == 'c':
                         # Cancel the download using Selenium
                         sys.stdout.write(f"\nCancelling download...\n")
                         sys.stdout.flush()
-                        return q_result.append(DownloadState.CANCELLED)
+                        q_result.append(DownloadState.CANCELLED)
+                    return
 
                 else:
                     # Resume the download
