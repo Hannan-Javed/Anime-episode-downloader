@@ -40,7 +40,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
     driver.get(download_page_link)
     try:
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
-    except:
+    except TimeoutError:
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         captcha_div = soup.select_one('div[id*="captcha"]')
         if captcha_div:
