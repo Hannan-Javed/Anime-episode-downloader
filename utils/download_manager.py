@@ -240,7 +240,7 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                         # Skip the download using Selenium
                         sys.stdout.write(f"\nCancelling download...\n") if last_link else sys.stdout.write(f"\nSkipping quality...\n")
                         sys.stdout.flush()
-                        q_result.append(DownloadState.SKIPPED)
+                        q_result.append(DownloadState.CANCELLED if last_link else DownloadState.SKIPPED)
                     elif q_result[-1] == 'c':
                         # Cancel the download using Selenium
                         sys.stdout.write(f"\nCancelling download...\n")
