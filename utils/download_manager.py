@@ -77,7 +77,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
                             continue
                     else:
-                        return False
+                        return DownloadState.FAILED
                 file_size = get_file_size(download_link)
                 file_path = os.path.join(download_directory, next(f for f in files if f.endswith(".crdownload")))
                 quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
