@@ -137,7 +137,7 @@ def download_episodes(url: str, episode_list: list, download_directory: str) -> 
 global progress_data
 progress_data = {'progress': 0.0, 'progress_size': 0.0, 'file_size': 0.0}
 @with_loading_animation(lambda: f"{progress_data['progress']:.1f}% downloaded, {progress_data['progress_size']:.2f}MB/{progress_data['file_size']:.2f}MB")
-def track_download(download_directory: str, file_path: str, file_size: float, stop_event: threading.Event, download_completed_event: threading.Event, resume_event: threading.Event):
+def track_download(file_path: str, file_size: float, stop_event: threading.Event, download_completed_event: threading.Event, resume_event: threading.Event):
     """
     Track the download progress of a file in the download directory.
 
@@ -150,10 +150,11 @@ def track_download(download_directory: str, file_path: str, file_size: float, st
         resume_event: An event to pause the download tracking.
 
     """
+    progress_data['progress_size'] = os.path.getsize(file_path) / 1024 / 1024
+    progress_data['progress'] = progress_data['progress_size'] * 100 / file_size
     progress_data['file_size'] = file_size
     total_time = 0
-    files = os.listdir(download_directory)
-    while ".crdownload" in "".join(files):
+    while progress_data['progress_size'] < file_size:
         resume_event.wait() # Wait if resume_event is cleared
         if stop_event.is_set():
             break  # Exit if stop_event is set
@@ -163,9 +164,7 @@ def track_download(download_directory: str, file_path: str, file_size: float, st
         total_time += 0.1
         time.sleep(0.1)
 
-        files = os.listdir(download_directory)
-    if ".crdownload" not in "".join(files):
-        download_completed_event.set()
+    download_completed_event.set()
     print()
 
 def manage_download(driver: Chrome, download_directory: str, file_path: str, file_size: float, last_link: bool = False) -> bool:
@@ -260,7 +259,7 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
     # Start the download tracking thread
     download_thread = threading.Thread(
         target=track_download, 
-        args=(download_directory, file_path, file_size), 
+        args=(file_path, file_size), 
         kwargs={
             'stop_event': stop_event, 
             'download_completed_event': download_completed, 
