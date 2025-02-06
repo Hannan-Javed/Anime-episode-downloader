@@ -164,7 +164,8 @@ def track_download(file_path: str, file_size: float, stop_event: threading.Event
         total_time += 0.1
         time.sleep(0.1)
 
-    download_completed_event.set()
+    if progress_data['progress_size'] >= file_size:
+        download_completed_event.set()
     print()
 
 def manage_download(driver: Chrome, download_directory: str, file_path: str, file_size: float, last_link: bool = False) -> bool:
