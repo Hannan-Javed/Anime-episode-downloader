@@ -213,9 +213,9 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                     """
                     timeout = 10
                     if last_link:
-                        prompt_message = "\nThis is the last quality. Pressing s or c will cancel the download"
+                        prompt_message = "This is the last quality. Pressing s or c will cancel the download"
                     else:
-                        prompt_message = "\nPress 's' to skip this quality or 'c' to cancel this episode"
+                        prompt_message = "Press 's' to skip this quality or 'c' to cancel this episode"
                     
                     for remaining in range(timeout * 10, 0, -1):
                         sys.stdout.write(f"\r{prompt_message} ({remaining / 10:.0f}): ")
