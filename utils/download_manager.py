@@ -211,12 +211,16 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                     Args:
                         q_result: A list to store the user's response ('s' or 'c').
                     """
+                    timeout = 10
                     if last_link:
-                        sys.stdout.write("\nThis is the last quality. Pressing s or c will cancel the download: ")
+                        prompt_message = "\nThis is the last quality. Pressing s or c will cancel the download"
                     else:
-                        sys.stdout.write("\nPress 's' to skip this quality or 'c' to cancel this episode: ")
-                    sys.stdout.flush()
-                    while True:
+                        prompt_message = "\nPress 's' to skip this quality or 'c' to cancel this episode"
+                    
+                    for remaining in range(timeout * 10, 0, -1):
+                        sys.stdout.write(f"\r{prompt_message} ({remaining / 10:.0f}): ")
+                        sys.stdout.flush()
+                        time.sleep(0.1)
                         if msvcrt.kbhit():
                             key = msvcrt.getch().decode().lower()
                             if key in ('s', 'c'):
