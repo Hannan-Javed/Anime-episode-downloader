@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 
 import requests
 from bs4 import BeautifulSoup
@@ -9,6 +10,7 @@ from config import BASE_URL
 
 
 @with_loading_animation(lambda: "Fetching Results")
+@lru_cache(maxsize=128)
 def fetch_results(anime_name: str, page: int = 1) -> list:
     """
     Fetches the search results for the given anime name
