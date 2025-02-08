@@ -80,7 +80,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                         return DownloadState.FAILED
                 file_size = get_file_size(download_link)
                 file_path = os.path.join(download_directory, next(f for f in files if f.endswith(".crdownload")))
-                quality_match = re.search(r'[SD0-9]{2,4}P', download_link_tag.text[11:].strip())
+                quality_match = re.search(r'[FULLHSD0-9]{2,6}P', download_link_tag.text[11:].strip())
                 quality = quality_match.group(0) if quality_match else "Unknown"
                 print(f"Downloading episode {episode_number}, Quality: {quality}")
                 download_state = manage_download(driver, download_directory, file_path, file_size, True if link_div == links[0] else False)
