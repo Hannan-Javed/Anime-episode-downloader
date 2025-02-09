@@ -37,6 +37,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
     Returns:
         bool: True if the episode was downloaded successfully, False otherwise
     """
+    invalid_link = False
     driver.get(download_page_link)
     try:
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
@@ -71,6 +72,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                         raise InvalidLinkError(f"Invalid download link for episode {episode_number}: {download_link}")
                 except InvalidLinkError as e:
                     print(f"Error: {e}")
+                    invalid_link = True
                     if link_div != links[0]:
                             print(f"Retrying download with another link...")
                             driver.get(download_page_link)
@@ -91,7 +93,7 @@ def download_episode(driver: Chrome, download_page_link: str, episode_number: in
                     driver.get(download_page_link)
                     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'dowload')))
                 else:
-                    return download_state
+                    return download_state,invalid_link
 
 def download_episodes(url: str, episode_list: list, download_directory: str) -> None:
     """
@@ -114,7 +116,8 @@ def download_episodes(url: str, episode_list: list, download_directory: str) -> 
     title = f"&{re.findall('title=[A-Za-z+]*', str(videosource_link[0]))[0]}"
 
     driver = setup_driver(download_directory)
-    
+    invalid_links = []
+    failed = []
     for current_episode in episode_list:
         if current_episode != episode_list[0]:
             response = requests.get(f"{url}{current_episode}")
@@ -126,15 +129,23 @@ def download_episodes(url: str, episode_list: list, download_directory: str) -> 
 
         download_page_link = f"{BASE_URL}/download?{episode_id}{title}{current_episode}&typesub={EPISODE_TYPE}"
 
-        successful = download_episode(driver, download_page_link, current_episode, download_directory)
+        successful, invalid_link = download_episode(driver, download_page_link, current_episode, download_directory)
         
         if successful == DownloadState.SUCCESS:
             print(f"Successfully downloaded episode {current_episode}!")
+            if invalid_link:
+                invalid_links.append(current_episode)
         elif successful == DownloadState.FAILED:
             print(f"Error! Cannot download episode {current_episode}")
+            failed.append(current_episode)
         
     driver.quit()
     print("All episodes downloaded!")
+
+    if invalid_links:
+        print(f"Episodes that downloaded with lower than highest quality: {', '.join(map(str, invalid_links))}")
+    if failed:
+        print(f"Episodes that failed to download: {', '.join(map(str, failed))}")
 
 
 global progress_data
