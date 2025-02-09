@@ -172,7 +172,10 @@ def track_download(file_path: str, file_size: float, stop_event: threading.Event
         resume_event.wait() # Wait if resume_event is cleared
         if stop_event.is_set():
             break  # Exit if stop_event is set
-        progress_data['progress_size'] = os.path.getsize(file_path) / 1024 / 1024
+        try:
+            progress_data['progress_size'] = os.path.getsize(file_path) / 1024 / 1024
+        except FileNotFoundError:
+            break
         progress_data['progress'] = progress_data['progress_size'] * 100 / file_size
 
         total_time += 0.1
