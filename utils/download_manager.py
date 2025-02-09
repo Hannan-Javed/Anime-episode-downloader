@@ -226,7 +226,8 @@ def manage_download(driver: Chrome, download_directory: str, file_path: str, fil
                             if key in ('s', 'c'):
                                 q_result.append(key)
                                 break
-
+                    else:
+                        sys.stdout.write(" "*100 + "\r")
                 prompt_thread = threading.Thread(target=ask_confirmation)
                 prompt_thread.start()
                 prompt_thread.join(timeout=10)  # 10-second timeout
