@@ -1,6 +1,7 @@
 # Anime-episode-downloader
+### Note: This repository is deprecated due to the source website being down at the moment. Alternatice solutions are being explored.
 A command-line application that automates the downloading of anime episodes using Selenium WebDriver. This tool interacts with anime streaming websites to retrieve download links, manages download progress with real-time tracking, and provides user controls for pausing/canceling downloads. It ensures compatibility across different operating systems by handling download directories and invalid filenames, offering a seamless and efficient experience for users to download their favorite anime episodes directly from the terminal.<br>
-Source website: https://s3embtaku.pro
+Source website: https://animekai.to
 ## Installation
 Clone the repository:
 ```
